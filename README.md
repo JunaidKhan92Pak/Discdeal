@@ -1,34 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DiscDeal
 
-## Getting Started
-
-First, run the development server:
+Search and browse discounts and deals. Built with Next.js (App Router), React and Tailwind CSS v4.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev     # http://localhost:3000
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How the screen works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+One screen, no page scrolling. At first only the hero and search bar are shown. Pressing **Search** reveals the
+category checkboxes, the brand / **Liked** tabs and a single horizontally scrolling row of deal cards.
+"View details" opens a modal; the heart saves a deal to the **Liked** tab (kept in `localStorage`).
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+  page.tsx               page shell: owns the search text and "browsing" state
+  layout.tsx             fonts, theme-init script (runs before paint, no flash)
+  globals.css            imports Tailwind + the two style files below
+  api/deals/route.ts     GET /api/deals  (q, subs, brand, ids)
+styles/
+  theme.css              DESIGN TOKENS: colours (light/dark), fonts, type scale, radii, widths, shadows, motion
+  components.css         shared classes built from the tokens: card, field, badge, tab, checkbox, scroller …
+components/
+  ui/                    small reusable pieces: Icon, LikeButton, CopyCodeButton, ScrollRow, ThemeToggle, BrandLogo
+  layout/                Navbar
+  home/                  Hero, SearchBar (the first screen)
+  deals/                 DealsBrowser (composes the rest), CategorySidebar, BrandTabs, ResultsList, DealCard, DealModal
+hooks/
+  useDealSearch.ts       fetches /api/deals (debounced, cancels stale requests)
+  useBrowseFilters.ts    checked subcategories, brand tab, Liked view
+  useLikedDeals.ts       liked ids in localStorage (external store, synced across tabs)
+lib/
+  types.ts               shared types
+  catalog.ts             categories, subcategories and the deals (swap DEALS for a real source here)
+  search.ts              parse + filter logic used by the API route
+  format.ts              price / date text
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Data flows one way: `page.tsx` → `DealsBrowser` → hooks → `/api/deals` → `lib/search.ts` → `lib/catalog.ts`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Rules that keep the UI consistent
 
-## Deploy on Vercel
+- **No raw values in components.** Colours, font sizes, radii, widths and shadows come from `styles/theme.css`
+  (`text-ink`, `text-title`, `rounded-card`, `max-w-browse`, `shadow-card-hover` …). Change a token, the whole app follows.
+- **Repeated looks are named classes** in `styles/components.css` (`card`, `field`, `tab`, `checkbox`, `like-btn` …).
+- **Icons are SVG** and live in `components/ui/Icon.tsx`. Add a path there, then use `<Icon name="…" />`.
+- **Animations must end with `backwards`, not `both`.** A lingering `transform` would trap `position: fixed`
+  modals and sheets inside their parent.
+- **Layout is height-aware.** The page is `h-svh`; the deal row fills what is left. Cards shrink their picture on
+  short screens and grow it (up to a cap) on tall ones. Phones in landscape get a minimum height and may scroll.
+- **Nothing in the category area scrolls sideways.** On small screens it becomes a "Categories" bottom sheet.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Adding data
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Add an entry to `DEALS` in `lib/catalog.ts` (pick a `subcategory` id from `CATEGORIES`, an `icon`, optionally an `image` URL).

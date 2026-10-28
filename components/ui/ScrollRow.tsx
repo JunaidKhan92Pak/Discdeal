@@ -1,12 +1,13 @@
 "use client";
 
 import { Icon } from "@/components/ui/Icon";
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
 
 /** Horizontal, swipeable row of items with snap points and arrow buttons for mouse users. */
 export function ScrollRow({ children, label }: { children: ReactNode; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [edge, setEdge] = useState({ start: true, end: false });
+  // Both arrows start hidden; they are measured before the first paint, so an arrow never flashes when everything fits.
+  const [edge, setEdge] = useState({ start: true, end: true });
 
   const update = useCallback(() => {
     const el = ref.current;
@@ -14,13 +15,10 @@ export function ScrollRow({ children, label }: { children: ReactNode; label: str
     setEdge({ start: el.scrollLeft <= 4, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 });
   }, []);
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(update);
+  useLayoutEffect(() => {
+    update();
     window.addEventListener("resize", update);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", update);
-    };
+    return () => window.removeEventListener("resize", update);
   }, [update, children]);
 
   function scrollBy(direction: 1 | -1) {

@@ -73,7 +73,7 @@
 
 /* Horizontal swipeable row; bleeds to the screen edge on phones but keeps its left/right padding */
 @utility scroller {
-  @apply -mx-gutter flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-gutter px-gutter pt-2 pb-4 [scrollbar-width:thin] lg:mx-0 lg:scroll-px-1 lg:px-1;
+  @apply -mx-gutter flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-px-gutter px-gutter pt-2 pb-4 [scrollbar-width:thin] lg:mx-0 lg:scroll-px-1 lg:px-1;
 }
 
 /* Round arrow buttons that sit on top of a scroller (mouse users; hidden on touch-size screens) */

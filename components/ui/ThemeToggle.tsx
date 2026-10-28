@@ -7,13 +7,18 @@ const STORAGE_KEY = "theme";
 export function ThemeToggle() {
   function toggle() {
     const root = document.documentElement;
-    root.classList.add("theme-fade");
     const next = !root.classList.contains("dark");
-    root.classList.toggle("dark", next);
+    const apply = () => root.classList.toggle("dark", next);
+
+    // A view transition cross-fades one snapshot of the page, so it costs the same with 5 deals or 500
+    // (no per-element transitions) and the card gradients, which can't transition, fade like everything else.
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (document.startViewTransition && !reduceMotion) document.startViewTransition(apply);
+    else apply();
+
     try {
       localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
     } catch {}
-    setTimeout(() => root.classList.remove("theme-fade"), 350);
   }
 
   // Both icons are always rendered; CSS (the `dark` class) decides which one shows,

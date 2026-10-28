@@ -12,10 +12,8 @@
   }
 }
 
-/* Smooth colour fade only while the user toggles the theme (never on page load). */
-.theme-fade,
-.theme-fade *,
-.theme-fade *::before,
-.theme-fade *::after {
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s !important;
+/* Theme switch cross-fade (see ThemeToggle): a quick fade of the whole page snapshot. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
 }

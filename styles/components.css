@@ -1,41 +1,41 @@
 /*
  * SHARED UI PIECES — built only from tokens in theme.css.
  * Use these class names in components instead of long utility strings.
+ * Everything you can tap is at least 44px tall (h-tap) so it is easy to hit, also for older hands.
  */
 
 /* Typography */
 @utility eyebrow {
-  @apply text-overline uppercase text-muted;
+  @apply text-overline font-semibold text-muted uppercase;
 }
 
 /* Layout */
 @utility page {
-  @apply relative mx-auto flex h-svh w-full flex-col overflow-hidden px-gutter py-5;
+  @apply relative mx-auto flex h-svh w-full flex-col overflow-hidden px-gutter py-4;
   @media (max-height: 34rem) {
     overflow-y: auto;
   }
 }
 
 @utility motion-layout {
-  @apply duration-700 ease-smooth;
+  @apply duration-500 ease-smooth;
 }
 
 /* Surfaces */
-@utility card {
-  @apply flex max-h-card-max min-h-0 flex-col overflow-hidden rounded-card border border-line-soft bg-surface shadow-soft transition duration-300 ease-smooth;
+
+/* Deal card (inside a Magic UI MagicCard). Off-screen cards skip layout and paint, so long lists stay fast. */
+@utility deal-card {
+  @apply rounded-card transition-shadow duration-200;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 19rem;
   &:hover {
-    @apply -translate-y-1.5 border-line shadow-card-hover;
+    @apply shadow-card-hover;
   }
 }
 
-/* Offer picture area at the top of a deal card; tinted by data-cat */
+/* Offer picture area: a quiet neutral tile with the category icon */
 @utility media {
-  @apply relative grid min-h-12 shrink grow basis-36 place-items-center overflow-hidden;
-  background: linear-gradient(
-    135deg,
-    oklch(var(--media-l1) 0.07 var(--cat-hue)),
-    oklch(var(--media-l2) 0.12 calc(var(--cat-hue) + 28))
-  );
+  @apply relative grid place-items-center overflow-hidden bg-panel text-soft;
 }
 
 @utility skeleton {
@@ -43,138 +43,184 @@
 }
 
 @utility field {
-  @apply flex h-14 items-center gap-3 rounded-field border-[1.5px] border-line bg-surface py-0 pr-2 pl-5 shadow-field transition duration-300 sm:h-16;
+  @apply flex h-14 items-center gap-2 rounded-field border border-line bg-surface py-0 pr-1.5 pl-4 shadow-field transition duration-200 sm:h-16 sm:pl-5;
   &:hover {
     @apply border-muted;
   }
   &:focus-within {
-    @apply border-ink shadow-field-focus;
+    @apply border-primary shadow-field-focus;
+  }
+  /* Once results show: slimmer, and it sits in the header row on desktop */
+  &[data-compact="true"] {
+    @apply h-12 shadow-none sm:h-12;
+  }
+  &[data-compact="true"] .search-btn {
+    @apply size-9 sm:size-9;
+  }
+}
+
+/* Compact search box inside lists (brand list) */
+@utility field-sm {
+  @apply flex h-11 items-center gap-2 rounded-button border border-line bg-surface px-3 transition duration-200;
+  &:focus-within {
+    @apply border-primary shadow-field-focus;
   }
 }
 
 /* Small elements */
+
+/* "30% OFF": the discount, in the money colour */
 @utility badge {
-  @apply rounded-full bg-accent px-2.5 py-1 text-caption font-bold text-on-accent;
+  @apply inline-flex items-center rounded-chip border border-save/30 bg-save-soft px-2 py-1 text-caption font-bold whitespace-nowrap text-save;
 }
 
 @utility icon-btn {
-  @apply grid place-items-center rounded-full text-muted transition;
+  @apply grid size-tap place-items-center rounded-full text-soft transition;
   &:hover {
-    @apply bg-hover;
+    @apply bg-hover text-ink;
+  }
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
   }
 }
 
 @utility code-btn {
-  @apply rounded-chip border-[1.5px] border-dashed border-ink px-2.5 py-1 text-caption font-bold tracking-wider text-ink transition;
+  @apply inline-flex min-h-9 items-center gap-1.5 rounded-chip border border-dashed border-soft px-3 text-small font-bold tracking-wide text-ink transition;
   &:hover {
-    @apply bg-accent text-on-accent;
+    @apply border-primary bg-primary-soft text-primary;
   }
 }
 
-/* Horizontal swipeable row; bleeds to the screen edge on phones but keeps its left/right padding */
-@utility scroller {
-  @apply -mx-gutter flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden scroll-px-gutter px-gutter pt-2 pb-4 [scrollbar-width:thin] lg:mx-0 lg:scroll-px-1 lg:px-1;
+/* Small pill: smart-search chips and quick-search suggestions */
+@utility chip {
+  @apply inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-small font-medium whitespace-nowrap text-ink transition duration-150;
+  &:hover {
+    @apply border-muted bg-hover;
+  }
+  &[data-state="on"] {
+    @apply border-primary bg-primary-soft font-semibold text-primary;
+  }
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
 }
 
-/* Round arrow buttons that sit on top of a scroller (mouse users; hidden on touch-size screens) */
-@utility scroll-arrow {
-  @apply absolute top-1/2 z-10 hidden size-10 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-2xl leading-none text-ink shadow-card-hover transition duration-300 ease-smooth md:grid;
+/* Filter pill: categories, Liked toggle, select triggers. Selected = data-state="on" (Radix) or aria-pressed. */
+@utility pill {
+  @apply inline-flex h-tap shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-4 text-small font-semibold whitespace-nowrap text-ink transition duration-150;
   &:hover {
-    @apply scale-110 bg-accent text-on-accent;
+    @apply border-muted;
   }
-  &[data-hidden="true"] {
-    @apply pointer-events-none scale-75 opacity-0;
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
   }
+  &[data-state="on"],
+  &[aria-pressed="true"],
+  &[data-active="true"] {
+    @apply border-primary bg-primary text-on-primary;
+  }
+  &[data-state="on"] .count,
+  &[aria-pressed="true"] .count,
+  &[data-active="true"] .count {
+    @apply text-on-primary/80;
+  }
+}
+
+/* A quiet number next to a filter: plain text, no bubble, so long lists do not turn into rows of shapes */
+@utility count {
+  @apply text-caption font-medium tabular-nums text-muted;
+}
+
+/* Dropdown menu (Radix Select content) */
+@utility menu {
+  @apply z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-(--radix-select-trigger-width) overflow-hidden rounded-card border border-line bg-surface p-1.5 shadow-menu;
+}
+
+@utility menu-item {
+  @apply relative flex min-h-tap cursor-pointer items-center gap-2 rounded-button py-2 pr-10 pl-3 text-body text-ink outline-none select-none;
+  &[data-highlighted] {
+    @apply bg-hover;
+  }
+  &[data-state="checked"] {
+    @apply font-semibold text-primary;
+  }
+}
+
+/* Row in a pick-one list (brand list): big, plain, with a tick-like highlight when chosen */
+@utility list-row {
+  @apply flex min-h-tap w-full items-center gap-3 rounded-button px-3 py-1.5 text-left text-body text-ink transition;
+  &:hover {
+    @apply bg-hover;
+  }
+  &:focus-visible {
+    @apply outline-2 -outline-offset-2 outline-primary;
+  }
+  /* Only a real choice is highlighted; "All …" rows (data-quiet) just turn bold, so a section never has two highlights */
+  &[aria-pressed="true"]:not([data-quiet]) {
+    @apply bg-primary-soft font-semibold text-primary;
+  }
+  &[aria-pressed="true"]:not([data-quiet]) .count {
+    @apply text-primary;
+  }
+  &[aria-pressed="true"][data-quiet] {
+    @apply font-semibold;
+  }
+}
+
+/* Dialogs: a dimmed backdrop, and a panel that is a bottom sheet on phones and a centred box on larger screens */
+@utility overlay {
+  @apply fixed inset-0 z-50 animate-fade bg-scrim;
+}
+
+@utility sheet {
+  @apply fixed inset-x-0 bottom-0 z-50 animate-pop rounded-t-2xl border border-line bg-surface shadow-menu outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[calc(100%-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-card;
 }
 
 /* Buttons */
 @utility btn-primary {
-  @apply inline-flex h-10 items-center justify-center gap-2 rounded-button bg-ink px-4 text-small font-bold text-bg transition duration-300 ease-smooth;
+  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button bg-primary px-5 text-body font-semibold text-on-primary transition duration-150;
   &:hover {
-    @apply bg-accent text-on-accent;
-  }
-}
-
-/* Navigation: horizontal tabs above the grid */
-@utility tab {
-  @apply relative whitespace-nowrap rounded-full px-4 py-2 text-small font-semibold text-soft transition duration-300 ease-smooth;
-  &:hover {
-    @apply bg-hover text-ink;
-  }
-  &[aria-selected="true"] {
-    @apply bg-ink text-bg shadow-soft;
-  }
-}
-
-/* Category filter: checkbox, rows, count pill, mobile trigger and panel */
-@utility checkbox {
-  @apply size-5 shrink-0 cursor-pointer appearance-none rounded-md border-[1.5px] border-line bg-surface bg-center bg-no-repeat transition duration-200 ease-smooth;
-  background-size: 0.8rem;
-  &:hover {
-    @apply border-ink;
+    @apply bg-primary-strong;
   }
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-ink;
-  }
-  &:checked,
-  &:indeterminate {
-    @apply border-ink bg-accent;
-  }
-  &:checked {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2320221f' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5L20 7'/%3E%3C/svg%3E");
-  }
-  &:indeterminate {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2320221f' stroke-width='3.5' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+    @apply outline-2 outline-offset-2 outline-primary;
   }
 }
 
-@utility filter-row {
-  @apply flex w-full items-center gap-3 rounded-card px-2.5 py-2.5 text-left transition duration-200 ease-smooth;
+@utility btn-secondary {
+  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button border border-line bg-surface px-5 text-body font-semibold text-ink transition duration-150;
   &:hover {
-    @apply bg-ink/5;
+    @apply border-primary text-primary;
   }
-  &[data-active="true"] {
-    @apply bg-surface shadow-soft;
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
   }
-}
-
-@utility count {
-  @apply rounded-full bg-hover px-2 py-0.5 text-caption tabular-nums text-muted;
-}
-
-@utility filter-trigger {
-  @apply inline-flex h-10 items-center gap-2 rounded-button border border-line bg-surface px-4 text-small font-semibold text-ink shadow-soft transition duration-300 ease-smooth lg:hidden;
-  &:hover {
-    @apply border-ink;
+  &:disabled {
+    @apply cursor-wait opacity-60;
   }
 }
 
-/* Desktop: a dedicated panel (own background, border, padding). Phones: hidden until opened, then a bottom sheet (scrolls vertically only). */
-@utility filter-panel {
-  @apply hidden min-h-0 flex-col lg:flex lg:flex-1 lg:rounded-card lg:border lg:border-line lg:bg-panel lg:p-3 lg:shadow-soft;
-  & .count {
-    @apply bg-surface;
-  }
-  &[data-open="true"] {
-    @apply fixed inset-x-0 bottom-0 z-50 flex max-h-[80svh] animate-pop rounded-t-2xl border border-line bg-surface p-4 shadow-card-hover lg:static lg:max-h-none lg:animate-none lg:rounded-card lg:bg-panel lg:p-3 lg:shadow-soft;
-  }
-}
-
-/* Heart button: sits on top of a card picture or inside the modal */
+/* Heart button on a card or in the details */
 @utility like-btn {
-  @apply grid size-9 place-items-center rounded-full bg-surface/85 text-ink shadow-soft backdrop-blur transition duration-300 ease-smooth;
+  @apply grid size-tap place-items-center rounded-full text-soft transition duration-150;
   &:hover {
-    @apply scale-110;
+    @apply bg-hover text-primary;
   }
-  &[data-liked="true"] {
-    @apply animate-like text-like;
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+  &[aria-pressed="true"] {
+    @apply text-primary;
   }
 }
 
-/* The single search control: a round icon button at the end of the search bar */
+/* The search button at the end of the search bar */
 @utility search-btn {
-  @apply grid size-10 shrink-0 place-items-center rounded-full bg-ink text-bg transition duration-300 ease-smooth sm:size-12;
+  @apply grid size-11 shrink-0 place-items-center rounded-button bg-primary text-on-primary transition duration-150 sm:size-12;
   &:hover {
-    @apply scale-105 bg-accent text-on-accent;
+    @apply bg-primary-strong;
+  }
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
   }
 }

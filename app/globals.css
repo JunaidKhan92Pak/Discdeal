@@ -12,6 +12,18 @@
   }
 }
 
+/* People who turn on "reduce motion" (common with vertigo or migraines) get no animations at all. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Theme switch cross-fade (see ThemeToggle): a quick fade of the whole page snapshot. */
 ::view-transition-old(root),
 ::view-transition-new(root) {

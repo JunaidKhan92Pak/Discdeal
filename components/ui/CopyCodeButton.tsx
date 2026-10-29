@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 
-export function CopyCodeButton({ code }: { code: string }) {
+export function CopyCodeButton({ code, className = "" }: { code: string; className?: string }) {
   const [copied, setCopied] = useState(false);
 
   function copy() {
@@ -14,10 +14,10 @@ export function CopyCodeButton({ code }: { code: string }) {
   }
 
   return (
-    <button type="button" onClick={copy} className="code-btn" aria-label={`Copy code ${code}`}>
+    <button type="button" onClick={copy} className={`code-btn ${className}`} aria-label={`Copy code ${code}`}>
       {copied ? (
         <span className="inline-flex items-center gap-1">
-          <Icon name="check" className="size-3.5" strokeWidth={2.5} /> copied
+          <Icon name="check" className="size-4" strokeWidth={2.5} /> Copied
         </span>
       ) : (
         code

@@ -10,7 +10,7 @@ const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&
 
 export const metadata: Metadata = {
   title: "DiscDeal — Find the deal, skip the full price",
-  description: "Search coupons, sales and exclusive offers from your favourite stores.",
+  description: "Smart search for discounts and deals across Pakistan: in English, Roman Urdu or Urdu.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

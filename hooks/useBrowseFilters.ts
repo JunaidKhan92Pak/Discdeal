@@ -1,41 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import type { Category } from "@/lib/types";
+import type { CategoryId, SortKey } from "@/lib/types";
 
-export type BrowseView = "browse" | "liked";
+export type BrandChoice = { id: string; name: string };
 
-/** Checked subcategories, brand tab and the Liked view. No checked boxes = show every deal. */
+/**
+ * Category pill (with optional subcategory), brand, sort order and the Liked view.
+ * Category and brand are independent filters: either can be picked first, and the counts on each follow the other.
+ */
 export function useBrowseFilters() {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [brand, setBrand] = useState("all");
-  const [view, setView] = useState<BrowseView>("browse");
+  const [category, setCategory] = useState<CategoryId | null>(null);
+  const [sub, setSub] = useState<string | null>(null);
+  const [brand, setBrand] = useState<BrandChoice | null>(null);
+  const [sort, setSort] = useState<SortKey>("relevance");
+  const [likedOnly, setLikedOnly] = useState(false);
 
-  function change(next: string[]) {
-    setSelected(next);
-    setBrand("all");
+  function selectCategory(next: CategoryId | null) {
+    setCategory(next);
+    setSub(null);
   }
 
-  function toggleSub(id: string) {
-    change(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
-  }
-
-  /** Parent checkbox: select all of its subcategories, or clear them if they are all selected already. */
-  function toggleCategory(category: Category) {
-    const ids = category.subcategories.map((s) => s.id);
-    const allSelected = ids.every((id) => selected.includes(id));
-    change(allSelected ? selected.filter((s) => !ids.includes(s)) : [...new Set([...selected, ...ids])]);
-  }
-
-  function selectBrand(next: string) {
+  /** "All deals from Khaadi": the brand, across every category it has deals in. */
+  function showBrand(next: BrandChoice) {
     setBrand(next);
-    setView("browse");
+    selectCategory(null);
   }
 
-  function showLiked() {
-    setBrand("all");
-    setView("liked");
-  }
-
-  return { selected, brand, view, toggleSub, toggleCategory, clear: () => change([]), selectBrand, showLiked };
+  return {
+    category,
+    sub,
+    brand,
+    sort,
+    likedOnly,
+    selectCategory,
+    selectSub: setSub,
+    selectBrand: setBrand,
+    showBrand,
+    setSort,
+    toggleLiked: () => setLikedOnly((on) => !on),
+  };
 }

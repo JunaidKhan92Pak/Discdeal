@@ -1,4 +1,4 @@
-﻿/*
+/*
  * DESIGN TOKENS — single source of truth for the look of DiscDeal.
  * Change a value here and the whole app follows. Components never use raw
  * colours, sizes or shadows; they use the names defined below.
@@ -6,44 +6,61 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---------- 1. Palette (switches between light and dark) ---------- */
+/* ---------- 1. Palette (switches between light and dark) ----------
+ * "Clear": calm and easy to read for everyone, students to grandparents. Only 4 colours:
+ *   neutrals (warm white + near-black) = almost everything
+ *   primary (blue)  = actions, links, "selected"
+ *   save    (green) = money saved: "You save Rs …" and the "30% OFF" tag
+ *   urgent  (amber) = time running out: "Ends tonight / tomorrow" (always with a clock icon, never colour alone)
+ * All text colours pass WCAG AA (4.5:1) on bg and surface in both modes; most pass AAA (7:1).
+ */
 :root {
-  --c-bg: #f3f0e9;
-  --c-surface: #fffdf9;
-  --c-hover: #ece8de;
-  --c-panel: #e7e1d2; /* sidebar panel */
-  --c-ink: #20221f;
-  --c-soft: #65665f;
-  --c-muted: #7b7c74;
-  --c-line: #d9d5cc;
-  --c-line-soft: #e3dfd4;
-  --c-olive: #969d32;
-  --c-shadow: 88 84 62; /* r g b of shadow tint */
-  --media-l1: 0.94; /* offer-image gradient lightness */
-  --media-l2: 0.86;
+  --c-bg: #f7f6f3;
+  --c-surface: #ffffff;
+  --c-hover: #f0eee9;
+  --c-panel: #f2f0eb;
+  --c-ink: #1c1b19;
+  --c-soft: #48453f;
+  --c-muted: #67635b;
+  --c-line: #dfdbd3;
+  --c-line-soft: #ebe8e2;
+  --c-primary: #1d4ed8;
+  --c-primary-strong: #1e40af;
+  --c-on-primary: #ffffff;
+  --c-primary-soft: #eaf0fe;
+  --c-save: #166534;
+  --c-save-soft: #e9f6ee;
+  --c-urgent: #92400e;
+  --c-focus: 29 78 216; /* r g b of the focus ring */
+  --c-shadow: 28 25 20; /* r g b of shadow tint */
   color-scheme: light;
 }
 
 .dark {
-  --c-bg: #141512;
-  --c-surface: #1e201c;
-  --c-hover: #2b2d27;
-  --c-panel: #262922;
-  --c-ink: #f3f0e9;
-  --c-soft: #b4b5ab;
-  --c-muted: #9a9b92;
-  --c-line: #3a3c34;
-  --c-line-soft: #2e302a;
-  --c-olive: #c4cc54;
+  --c-bg: #141311;
+  --c-surface: #1d1c1a;
+  --c-hover: #272522;
+  --c-panel: #191816;
+  --c-ink: #f3f1ec;
+  --c-soft: #d0cbc1;
+  --c-muted: #a5a097;
+  --c-line: #3a3732;
+  --c-line-soft: #2b2926;
+  --c-primary: #8ab4ff;
+  --c-primary-strong: #b3ceff;
+  --c-on-primary: #0b1838;
+  --c-primary-soft: #1b2640;
+  --c-save: #6dd498;
+  --c-save-soft: #16301f;
+  --c-urgent: #f4a94f;
+  --c-focus: 138 180 255;
   --c-shadow: 0 0 0;
-  --media-l1: 0.34;
-  --media-l2: 0.25;
   color-scheme: dark;
 }
 
 /* ---------- 2. Tailwind theme (what utilities are generated from) ---------- */
 @theme inline {
-  /* Colours: bg-bg, bg-surface, text-ink, text-soft, text-muted, border-line … */
+  /* Neutrals: bg-bg, bg-surface, text-ink, text-soft, text-muted, border-line … */
   --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
   --color-hover: var(--c-hover);
@@ -53,81 +70,89 @@
   --color-muted: var(--c-muted);
   --color-line: var(--c-line);
   --color-line-soft: var(--c-line-soft);
-  --color-olive: var(--c-olive);
 
-  /* Brand accent — same in both modes */
-  --color-accent: #dfff59;
-  --color-accent-dot: #b7d939;
-  --color-on-accent: #20221f;
-  --color-brand: #20221f;
-  --color-scrim: rgb(0 0 0 / 0.55);
-  --color-like: #e5484d;
+  /* Meaning colours: bg-primary, text-primary, text-save, bg-save-soft, text-urgent … */
+  --color-primary: var(--c-primary);
+  --color-primary-strong: var(--c-primary-strong);
+  --color-on-primary: var(--c-on-primary);
+  --color-primary-soft: var(--c-primary-soft);
+  --color-save: var(--c-save);
+  --color-save-soft: var(--c-save-soft);
+  --color-urgent: var(--c-urgent);
+  --color-scrim: rgb(0 0 0 / 0.5);
+
+  /* Names Magic UI components expect */
+  --color-background: var(--c-surface);
+  --color-border: var(--c-line);
 
   /* Fonts: font-sans, font-serif */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument), Georgia, serif;
 
-  /* Type scale: text-display, text-title, text-price, text-body, text-small, text-caption, text-overline */
-  --text-display: clamp(2.75rem, min(11vw, 15svh), 8rem);
-  --text-display--line-height: 0.9;
-  --text-display--letter-spacing: -0.05em;
+  /* Type scale, sized for older eyes too: body is 16px, the smallest text is 13px.
+     text-display, text-title, text-headline, text-offer, text-price, text-body, text-small, text-caption, text-overline */
+  --text-display: clamp(2.5rem, min(10vw, 14svh), 6.5rem);
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.04em;
   --text-display--font-weight: 600;
-  --text-title: 1.125rem;
-  --text-title--line-height: 1.2;
-  --text-title--letter-spacing: -0.02em;
-  --text-title--font-weight: 500;
-  --text-headline: 1.875rem;
-  --text-headline--line-height: 1.1;
-  --text-headline--letter-spacing: -0.03em;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.01em;
+  --text-title--font-weight: 600;
+  --text-headline: 1.75rem;
+  --text-headline--line-height: 1.15;
+  --text-headline--letter-spacing: -0.02em;
   --text-headline--font-weight: 700;
-  --text-price: 1.25rem;
+  /* The deal's headline on a card ("30% OFF", "Buy 1 Get 1"): the first thing the eye should land on */
+  --text-offer: clamp(1.25rem, 1rem + 1vw, 1.5rem);
+  --text-offer--line-height: 1.15;
+  --text-offer--letter-spacing: -0.01em;
+  --text-offer--font-weight: 800;
+  --text-price: 1.375rem;
+  --text-price--line-height: 1.2;
   --text-price--font-weight: 700;
-  --text-body: 0.9375rem;
+  --text-body: 1rem;
   --text-body--line-height: 1.6;
-  --text-small: 0.8125rem;
+  --text-small: 0.9375rem;
   --text-small--line-height: 1.5;
-  --text-caption: 0.6875rem;
-  --text-caption--line-height: 1.4;
-  --text-overline: 0.625rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.45;
+  --text-overline: 0.75rem;
   --text-overline--line-height: 1.4;
-  --text-overline--letter-spacing: 0.14em;
+  --text-overline--letter-spacing: 0.08em;
 
-  /* Radius: rounded-field, rounded-card, rounded-chip */
-  --radius-field: 1rem;
-  --radius-card: 0.75rem;
-  --radius-chip: 0.375rem;
-  --radius-button: 0.625rem;
+  /* Radius: rounded-field, rounded-card, rounded-chip, rounded-button */
+  --radius-field: 0.875rem;
+  --radius-card: 1rem;
+  --radius-chip: 0.5rem;
+  --radius-button: 0.75rem;
 
   /* Layout widths: max-w-hero, max-w-search, max-w-content, max-w-copy */
   --container-hero: 72rem;
   --container-search: 42rem;
   --container-content: 64rem;
-  --container-browse: 90rem;
-  --container-copy: 24rem;
+  --container-browse: 80rem;
+  --container-copy: 26rem;
 
   /* Page gutter: px-gutter */
-  --spacing-gutter: clamp(0.75rem, 2.5vw, 2rem);
-  --spacing-card-max: 34rem; /* tallest a deal card may grow */
+  --spacing-gutter: clamp(1rem, 2.5vw, 2rem);
+  /* Smallest comfortable tap target (WCAG AAA target size): h-tap, size-tap */
+  --spacing-tap: 2.75rem;
 
-  /* Shadows: shadow-field, shadow-field-focus, shadow-card-hover */
-  --shadow-field: 0 18px 45px rgb(var(--c-shadow) / 0.1);
-  --shadow-field-focus: 0 0 0 5px rgb(223 255 89 / 0.4), 0 20px 45px rgb(var(--c-shadow) / 0.2);
-  --shadow-card-hover: 0 18px 40px rgb(var(--c-shadow) / 0.18);
-  --shadow-soft: 0 6px 18px rgb(var(--c-shadow) / 0.08);
+  /* Shadows: soft and quiet; they separate layers, they do not decorate */
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06);
+  --shadow-card: 0 1px 3px rgb(var(--c-shadow) / 0.07);
+  --shadow-card-hover: 0 8px 24px rgb(var(--c-shadow) / 0.1);
+  --shadow-field: 0 2px 10px rgb(var(--c-shadow) / 0.06);
+  --shadow-field-focus: 0 0 0 4px rgb(var(--c-focus) / 0.25);
+  --shadow-menu: 0 12px 32px rgb(var(--c-shadow) / 0.16);
 
-  /* Motion: ease-smooth, animate-rise */
+  /* Motion: short and small; switched off for people who ask for reduced motion (globals.css) */
   --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* `backwards`, not `both`: a lingering transform would trap position:fixed modals/sheets inside their parent */
-  --animate-rise: rise 0.55s var(--ease-smooth) backwards;
+  --animate-rise: rise 0.35s var(--ease-smooth) backwards;
   --animate-fade: fade 0.2s ease backwards;
-  --animate-like: like 0.4s var(--ease-smooth);
-  --animate-pop: pop 0.3s var(--ease-smooth) backwards;
-
-  @keyframes like {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.35); }
-    100% { transform: scale(1); }
-  }
+  --animate-pop: pop 0.25s var(--ease-smooth) backwards;
 
   @keyframes fade {
     from { opacity: 0; }
@@ -135,23 +160,12 @@
   }
 
   @keyframes pop {
-    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   @keyframes rise {
-    from { opacity: 0; transform: translateY(24px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
-
-/* ---------- 3. Category colours (hue used for each category's offer-image gradient) ---------- */
-[data-cat] { --cat-hue: 260; }
-[data-cat="food"] { --cat-hue: 45; }
-[data-cat="electronics"] { --cat-hue: 250; }
-[data-cat="fashion"] { --cat-hue: 340; }
-[data-cat="education"] { --cat-hue: 160; }
-[data-cat="health-beauty"] { --cat-hue: 10; }
-[data-cat="travel"] { --cat-hue: 215; }
-[data-cat="home"] { --cat-hue: 85; }
-[data-cat="entertainment"] { --cat-hue: 300; }

@@ -1,17 +1,20 @@
 "use client";
 
 import { useRef } from "react";
+import { Label } from "radix-ui";
 import { Icon } from "@/components/ui/Icon";
 
 type SearchBarProps = {
   value: string;
+  /** Slimmer bar once results show (it sits in the header row on desktop). */
+  compact?: boolean;
   onChange: (value: string) => void;
   onFocus: () => void;
   onBlur: () => void;
   onSubmit: () => void;
 };
 
-export function SearchBar({ value, onChange, onFocus, onBlur, onSubmit }: SearchBarProps) {
+export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, onSubmit }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -19,20 +22,22 @@ export function SearchBar({ value, onChange, onFocus, onBlur, onSubmit }: Search
         e.preventDefault();
         inputRef.current?.blur();
         onSubmit();
-      }} className="mx-auto w-full max-w-search">
-      <label htmlFor="search" className="sr-only">Search deals</label>
-      <div className="field">
+      }} className={`mx-auto w-full max-w-search ${compact ? "lg:mx-0" : ""}`}>
+      <Label.Root htmlFor="search" className="sr-only">Search deals</Label.Root>
+      <div className="field" data-compact={compact}>
         <input
           id="search"
           ref={inputRef}
           type="search"
           autoComplete="off"
-          placeholder="Search deals or stores…"
+          dir="auto"
+          enterKeyHint="search"
+          placeholder="Try “pizza in Lahore” or “kapray 50%”"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={onFocus}
           onBlur={onBlur}
-          className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted/70 sm:text-lg [&::-webkit-search-cancel-button]:hidden"
+          className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-muted sm:text-lg [&::-webkit-search-cancel-button]:hidden"
         />
         {value && (
           <button
@@ -43,13 +48,13 @@ export function SearchBar({ value, onChange, onFocus, onBlur, onSubmit }: Search
               onChange("");
               inputRef.current?.focus();
             }}
-            className="icon-btn size-8 shrink-0"
+            className="icon-btn shrink-0"
           >
-            <Icon name="close" className="size-4" />
+            <Icon name="close" className="size-5" />
           </button>
         )}
         <button type="submit" aria-label="Search deals" className="search-btn">
-          <Icon name="search" className="size-5" />
+          <Icon name="search" className="size-6" />
         </button>
       </div>
     </form>

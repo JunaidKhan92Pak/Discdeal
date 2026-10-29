@@ -7,12 +7,11 @@ export function LikeButton({ liked, title, onToggle, className = "" }: LikeButto
     <button
       type="button"
       className={`like-btn ${className}`}
-      data-liked={liked}
       aria-pressed={liked}
       aria-label={liked ? `Remove ${title} from liked deals` : `Like ${title}`}
       onClick={onToggle}
     >
-      <Icon name="heart" className="size-5" fill={liked ? "currentColor" : "none"} />
+      <Icon name="heart" className="size-6" fill={liked ? "currentColor" : "none"} />
     </button>
   );
 }

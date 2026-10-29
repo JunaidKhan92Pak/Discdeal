@@ -24,9 +24,9 @@ export function ThemeToggle() {
   // Both icons are always rendered; CSS (the `dark` class) decides which one shows,
   // so there is no state, no hydration mismatch and no icon flicker on load.
   return (
-    <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn size-9 border border-line bg-surface text-ink hover:scale-105">
-      <Icon name="sun" className="hidden size-4 dark:block" />
-      <Icon name="moon" className="size-4 dark:hidden" />
+    <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn border border-line bg-surface text-ink">
+      <Icon name="sun" className="hidden size-5 dark:block" />
+      <Icon name="moon" className="size-5 dark:hidden" />
     </button>
   );
 }

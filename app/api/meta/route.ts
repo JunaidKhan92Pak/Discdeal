@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { cached, dataVersion } from "@/lib/server/cache";
+import { cached, dataVersion, debugHeaders } from "@/lib/server/cache";
 import { getCatalog } from "@/lib/server/catalog";
 import { rateLimit, visitorId } from "@/lib/server/rate-limit";
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const { value, from } = await cached(`meta:${await dataVersion()}`, 300, async () => (await getCatalog()).meta, { shared: true });
     return Response.json(value, {
-      headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600", "X-Cache": from },
+      headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600", ...debugHeaders(from) },
     });
   } catch (error) {
     console.error("GET /api/meta failed", error);

@@ -16,17 +16,20 @@ import { removeWords } from "@/lib/intent";
 import { CATEGORIES } from "@/lib/taxonomy";
 import type { CityId, Deal, IntentPart } from "@/lib/types";
 
-type DealsBrowserProps = { query: string; city: CityId | null; onQueryChange: (query: string) => void };
+/** searchNow: changes when the user presses Enter, so the search runs without waiting for typing to pause. */
+type DealsBrowserProps = { query: string; city: CityId | null; searchNow: number; onQueryChange: (query: string) => void };
 
 /**
  * Everything below the search bar, top to bottom in the order people decide:
  * what search understood → which category → how many / sort / liked → the deals.
  */
-export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) {
+export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBrowserProps) {
   const filters = useBrowseFilters();
   const { liked, toggle } = useLikedDeals();
   const { myCards, save: saveCards } = useMyCards();
   const meta = useMeta();
+  // Removing a chip is a deliberate change, so it searches at once too.
+  const [chipRemoved, setChipRemoved] = useState(0);
   const { items, page, status, loadingMore, moreFailed, loadMore, retry } = useDeals({
     q: query,
     city,
@@ -36,7 +39,7 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
     cards: myCards.only ? myCards.cards : null,
     sort: filters.sort,
     ids: filters.likedOnly ? liked : null,
-  });
+  }, searchNow * 1000 + chipRemoved);
   // The dialog stays mounted after closing (with the last deal) so Radix can return focus to the card.
   const [selected, setSelected] = useState<Deal | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -63,6 +66,7 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
   const searchedCities = typedCities.length > 0 ? typedCities : city ? [city] : [];
 
   function removePart(part: IntentPart) {
+    setChipRemoved((n) => n + 1);
     onQueryChange(removeWords(query, part.words));
   }
 

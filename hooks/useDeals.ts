@@ -15,8 +15,11 @@ const CACHE_LIMIT = 60;
 /* Requests on their way: asking for the same page again joins the same request instead of sending another. */
 const inflight = new Map<string, Promise<DealsPage>>();
 
-/** Typing waits this long after the last key before asking the server (fewer requests, still feels instant). */
-const TYPING_DELAY_MS = 200;
+/**
+ * Typing waits this long after the last key before asking the server, so a whole word is one request instead of
+ * one per letter. Long enough for slow typists, short enough to feel live. Enter skips the wait.
+ */
+const TYPING_DELAY_MS = 500;
 
 function fetchPage(url: string): Promise<DealsPage> {
   const hit = cache.get(url);
@@ -40,8 +43,14 @@ function urlFor(filters: Filters, offset: number): string {
   return `/api/deals?${toSearchParams({ ...filters, offset, limit: PAGE_SIZE })}`;
 }
 
-function useDebounced<T>(value: T, delay: number): T {
+/** `value`, but only after it stopped changing for `delay` ms. A new `now` value skips the wait. */
+function useDebounced<T>(value: T, delay: number, now?: unknown): T {
   const [debounced, setDebounced] = useState(value);
+  const [lastNow, setLastNow] = useState(now);
+  if (now !== lastNow) {
+    setLastNow(now);
+    setDebounced(value);
+  }
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay);
     return () => clearTimeout(timer);
@@ -56,8 +65,9 @@ type Loaded = { key: string; items: Deal[]; page: DealsPage | null; error: boole
  * requests are shared, answers are kept for the tab, and an outdated answer is ignored (but still cached for later).
  * The previous results stay on screen (dimmed) until the new ones arrive, so the list never flashes empty.
  */
-export function useDeals(input: Filters) {
-  const typed = useDebounced(input.q.trim(), TYPING_DELAY_MS);
+export function useDeals(input: Filters, searchNow?: number) {
+  // Spaces are tidied first, so "pizza " and "pizza  lahore" do not count as new searches.
+  const typed = useDebounced(input.q.trim().replace(/\s+/g, " "), TYPING_DELAY_MS, searchNow);
   const filters: Filters = { ...input, q: typed.length < 2 ? "" : typed };
   const key = urlFor(filters, 0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);

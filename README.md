@@ -100,6 +100,8 @@ Brands have a URL-safe id (`brandId`, e.g. `j-junaid-jamshed`), sent to the API 
 ## Project structure
 
 ```
+proxy.ts                 runs in front of /api: GET only, not for other websites, no over-long URLs
+next.config.ts           security headers, no X-Powered-By, ships data/ with the API
 app/
   page.tsx               page shell: search text, saved city, "browsing" state (with a cross-fade)
   layout.tsx             fonts, theme-init script (runs before paint, no flash)
@@ -166,7 +168,8 @@ The deal data never ships to the browser; only one page of results does.
   `npm run db:test`). The live deals are loaded into memory once a minute and searched there, which is fast for
   thousands of deals. At tens of thousands, move the filtering into SQL (pg_trgm) or a search engine
   (Meilisearch/Typesense); the API and the UI do not change.
-- **Few requests from the browser**: typing waits 200 ms after the last key, one-letter searches are not sent,
+- **Few requests from the browser**: typing waits half a second (500 ms) after the last key, so a word is one
+  request, not one per letter; Enter and removing a chip search at once. One-letter searches are not sent,
   two components asking for the same page share one request, and the last 60 pages are kept for the tab (back to
   an earlier search = instant). `/api/meta` is fetched once per visit.
 - **Caching on the server, in layers**, so a burst of identical searches costs one database query at most:
@@ -174,9 +177,14 @@ The deal data never ships to the browser; only one page of results does.
   2. each server keeps the last 500 answers in memory;
   3. with Redis (Upstash) set, answers are shared by every server, so a new server starts warm;
   4. the deals themselves are loaded once a minute, and only once even if 100 searches arrive together.
-  The response header `X-Cache` says which layer answered (`memory`, `redis` or `fresh`).
+  While developing, the response header `X-Cache` says which layer answered (`memory`, `redis` or `fresh`).
 - **Instant refresh after an import**: `npm run db:import` bumps a data version in Redis; every cached answer is
   keyed by it, so the site shows new deals within seconds instead of waiting for caches to expire.
+- **The server stays private**: the browser only calls this site's own `/api/deals` and `/api/meta`. The
+  database and Redis addresses and keys are read on the server only (`lib/server/config.ts`, marked `server-only`,
+  so a build fails if browser code imports it). `proxy.ts` runs in front of the API and turns away anything but
+  GET, requests from scripts on other websites, and over-long URLs before they cost any work. No `X-Powered-By`
+  header, no internal error details in responses, and security headers on every response (`next.config.ts`).
 - **Rate limit**: one visitor may make 120 searches a minute (`RATE_LIMIT_PER_MINUTE`); more gets `429` with
   `Retry-After`. Shared across servers with Redis, per server without.
 - **Every limit is a setting**: cache times and the rate limit are environment variables (see `.env.example`), all

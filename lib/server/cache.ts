@@ -98,3 +98,8 @@ export async function bumpDataVersion(): Promise<boolean> {
   await redis.incr(VERSION_KEY);
   return true;
 }
+
+/** Which cache layer answered, as a response header, only while developing (in production it stays private). */
+export function debugHeaders(from: CacheSource): Record<string, string> {
+  return process.env.NODE_ENV === "production" ? {} : { "X-Cache": from };
+}

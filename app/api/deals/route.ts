@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { parseDealQuery, toSearchParams } from "@/lib/query";
-import { cached, dataVersion } from "@/lib/server/cache";
+import { cached, dataVersion, debugHeaders } from "@/lib/server/cache";
 import { getCatalog } from "@/lib/server/catalog";
 import { config } from "@/lib/server/config";
 import { rateLimit, visitorId } from "@/lib/server/rate-limit";
@@ -11,7 +11,7 @@ import type { DealQuery } from "@/lib/types";
  * GET /api/deals?q=&city=&cat=&sub=&brand=&cards=&sort=&ids=&offset=&limit=
  * Repeat questions are answered without redoing the work: the CDN (s-maxage), then this server's memory, then
  * Redis (shared by all servers), and only then the search itself, once even if many identical requests arrive
- * together. The `X-Cache` header says which layer answered (memory / redis / fresh).
+ * together. While developing, the `X-Cache` header says which layer answered (memory / redis / fresh).
  */
 export async function GET(request: NextRequest) {
   const limit = await rateLimit(visitorId(request.headers));
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     return Response.json(value, {
       headers: {
         "Cache-Control": `public, max-age=0, s-maxage=${config.cdnSeconds}, stale-while-revalidate=${config.cdnSeconds * 5}`,
-        "X-Cache": from,
+        ...debugHeaders(from),
       },
     });
   } catch (error) {

@@ -17,6 +17,8 @@ export default function Home() {
   const [focused, setFocused] = useState(false);
   // Nothing but the search screen is shown until the user searches.
   const [browsing, setBrowsing] = useState(false);
+  // Counts Enter presses: each one searches at once instead of waiting for typing to pause.
+  const [searchNow, setSearchNow] = useState(0);
 
   /**
    * Switches between the search screen and the results; a short cross-fade covers the layout change.
@@ -84,7 +86,10 @@ export default function Home() {
               onChange={handleChange}
               onFocus={() => setFocused(true)}
               onBlur={handleBlur}
-              onSubmit={() => changeBrowsing(true)}
+              onSubmit={() => {
+                setSearchNow((n) => n + 1);
+                changeBrowsing(true);
+              }}
             />
             {!browsing && <QuickSearches examples={meta?.suggestions ?? []} onPick={pickExample} />}
           </div>
@@ -93,7 +98,7 @@ export default function Home() {
         </div>
       </Header>
 
-      {browsing && <DealsBrowser query={query} city={city} onQueryChange={setQuery} />}
+      {browsing && <DealsBrowser query={query} city={city} searchNow={searchNow} onQueryChange={setQuery} />}
 
       {/* On phones the footer gives its height to the results while browsing. */}
       <footer className={`shrink-0 justify-center pt-3 text-caption text-muted [@media(max-height:34rem)]:hidden ${browsing ? "hidden sm:flex" : "flex"}`}>

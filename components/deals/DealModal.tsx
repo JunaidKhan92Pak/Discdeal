@@ -6,11 +6,15 @@ import { OfferText } from "@/components/deals/OfferText";
 import { CopyCodeButton } from "@/components/ui/CopyCodeButton";
 import { Icon } from "@/components/ui/Icon";
 import { CATEGORIES } from "@/lib/taxonomy";
-import { formatChannels, formatCityList, formatEnds, formatPrice, isEndingSoon } from "@/lib/format";
-import type { Deal } from "@/lib/types";
+import { cardName, formatChannels, formatCityList, formatDate, formatEnds, formatPrice, isEndingSoon } from "@/lib/format";
+import type { Card, Deal } from "@/lib/types";
 
 type DealModalProps = {
   deal: Deal;
+  /** The user's saved cards (to mark "You have this card"). */
+  myCardIds: string[];
+  /** Card names from the data. */
+  cards: Card[];
   open: boolean;
   /** Gets focus back on close (Radix only does this for its own Dialog.Trigger, and cards open the dialog themselves). */
   returnFocusTo: RefObject<HTMLElement | null>;
@@ -26,10 +30,12 @@ type DealModalProps = {
  * the page behind does not scroll, and focus returns to the card afterwards.
  * A bottom sheet on phones (within thumb reach), a centred dialog on larger screens.
  */
-export function DealModal({ deal, open, returnFocusTo, liked, onToggleLike, onOpenChange, onShowBrand }: DealModalProps) {
+export function DealModal({ deal, myCardIds, cards, open, returnFocusTo, liked, onToggleLike, onOpenChange, onShowBrand }: DealModalProps) {
   const category = CATEGORIES.find((c) => c.id === deal.category);
   const subcategory = category?.subcategories.find((sc) => sc.id === deal.subcategory);
   const urgent = isEndingSoon(deal.endsInDays);
+  const hasPrice = deal.price !== undefined && deal.originalPrice !== undefined;
+  const source = sourceName(deal.sourceUrl);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -77,15 +83,36 @@ export function DealModal({ deal, open, returnFocusTo, liked, onToggleLike, onOp
               </button>
             </div>
 
-            <div>
-              <p className="flex flex-wrap items-baseline gap-x-2">
-                <strong className="text-price tabular-nums">{formatPrice(deal.price)}</strong>
-                <s className="text-body tabular-nums text-muted">{formatPrice(deal.originalPrice)}</s>
-              </p>
-              <p className="mt-0.5 text-body font-semibold text-save">You save {formatPrice(deal.originalPrice - deal.price)}</p>
-            </div>
+            {hasPrice && (
+              <div>
+                <p className="flex flex-wrap items-baseline gap-x-2">
+                  <strong className="text-price tabular-nums">{formatPrice(deal.price!)}</strong>
+                  <s className="text-body tabular-nums text-muted">{formatPrice(deal.originalPrice!)}</s>
+                </p>
+                <p className="mt-0.5 text-body font-semibold text-save">You save {formatPrice(deal.originalPrice! - deal.price!)}</p>
+              </div>
+            )}
 
-            <Dialog.Description className="text-body text-soft">{deal.description}</Dialog.Description>
+            {deal.cards.length > 0 && (
+              <div className="rounded-card bg-primary-soft px-4 py-3">
+                <p className="text-small font-semibold text-primary">Pay with</p>
+                <ul className="mt-1 space-y-1">
+                  {deal.cards.map((id) => (
+                    <li key={id} className="flex items-start gap-2 text-body font-semibold text-ink">
+                      <Icon name="card" className="mt-0.5 size-5 shrink-0 text-primary" />
+                      <span>
+                        {cardName(id, cards)}
+                        {myCardIds.includes(id) && <span className="block text-small font-semibold text-save">✓ You have this card</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <Dialog.Description className="text-body text-soft">
+              {deal.description || "Show your card when you pay. The bank may change or end the offer at any time."}
+            </Dialog.Description>
 
             <dl className="divide-y divide-line-soft rounded-card border border-line text-body">
               <div className="flex items-center justify-between gap-4 px-4 py-3">
@@ -98,20 +125,31 @@ export function DealModal({ deal, open, returnFocusTo, liked, onToggleLike, onOp
               </div>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <dt className="shrink-0 text-soft">Offer ends</dt>
-                <dd className={`inline-flex items-center gap-1.5 font-semibold ${urgent ? "text-urgent" : ""}`}>
-                  <Icon name="clock" className="size-4" />
-                  {formatEnds(deal.endsInDays)}
+                <dd className={`inline-flex items-center gap-1.5 text-right font-semibold ${urgent ? "text-urgent" : ""}`}>
+                  <Icon name="clock" className="size-4 shrink-0" />
+                  {deal.endsAt ? `${formatDate(deal.endsAt)} (${formatEnds(deal.endsInDays, null).toLowerCase()})` : "No end date given"}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <dt className="shrink-0 text-soft">Coupon code</dt>
-                <dd>{deal.code ? <CopyCodeButton code={deal.code} /> : <span className="font-semibold">No code needed</span>}</dd>
-              </div>
+              {deal.code && (
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <dt className="shrink-0 text-soft">Coupon code</dt>
+                  <dd>
+                    <CopyCodeButton code={deal.code} />
+                  </dd>
+                </div>
+              )}
             </dl>
 
+            <p className="flex items-start gap-2 text-small text-muted">
+              <Icon name="check" className="mt-0.5 size-4 shrink-0" />
+              <span>
+                From {source}, checked on {formatDate(deal.checkedAt)}. Offers can change, so please confirm before you pay.
+              </span>
+            </p>
+
             <div className="flex flex-col gap-2 sm:flex-row-reverse">
-              <a href={deal.url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1">
-                Go to {deal.brand}
+              <a href={deal.sourceUrl} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1">
+                View offer on {source}
                 <Icon name="arrow-up-right" className="size-5" />
               </a>
               <button type="button" className="btn-secondary" aria-pressed={liked} onClick={() => onToggleLike(deal.id)}>
@@ -124,4 +162,13 @@ export function DealModal({ deal, open, returnFocusTo, liked, onToggleLike, onOp
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+/** "https://www.hbl.com/…" → "hbl.com" */
+function sourceName(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "the source";
+  }
 }

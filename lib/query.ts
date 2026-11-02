@@ -10,7 +10,9 @@ const MAX_IDS = 200;
 
 const CITY_IDS = new Set<string>(CITIES.map((c) => c.id));
 const CATEGORY_IDS = new Set<string>(CATEGORIES.map((c) => c.id));
-const BRAND_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** Brand and card ids are data, so the server only checks their shape here; unknown ones simply match nothing. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const isSlug = (value: string) => value.length <= 60 && SLUG.test(value);
 const SORTS = new Set<string>(["relevance", "discount", "ending", "price"] satisfies SortKey[]);
 
 export function toSearchParams(query: DealQuery): URLSearchParams {
@@ -20,6 +22,7 @@ export function toSearchParams(query: DealQuery): URLSearchParams {
   if (query.category) params.set("cat", query.category);
   if (query.sub) params.set("sub", query.sub);
   if (query.brand) params.set("brand", query.brand);
+  if (query.cards) params.set("cards", query.cards.join(","));
   if (query.sort !== "relevance") params.set("sort", query.sort);
   if (query.ids) params.set("ids", query.ids.join(","));
   if (query.offset > 0) params.set("offset", String(query.offset));
@@ -40,6 +43,7 @@ export function parseDealQuery(params: URLSearchParams): DealQuery {
   const sub = params.get("sub");
   const validSub = validCategory && sub && CATEGORIES.find((c) => c.id === validCategory)?.subcategories.some((s) => s.id === sub) ? sub : null;
   const brand = params.get("brand");
+  const cards = params.get("cards");
   const sort = params.get("sort");
   const ids = params.get("ids");
 
@@ -48,7 +52,9 @@ export function parseDealQuery(params: URLSearchParams): DealQuery {
     city: city && CITY_IDS.has(city) ? (city as CityId) : null,
     category: validCategory,
     sub: validSub,
-    brand: brand && brand.length <= 60 && BRAND_ID.test(brand) ? brand : null,
+    brand: brand && isSlug(brand) ? brand : null,
+    // "cards=" with no valid ids means "my cards" with nothing picked → no deals.
+    cards: cards === null ? null : [...new Set(cards.split(",").filter(isSlug))].slice(0, 20),
     sort: sort && SORTS.has(sort) ? (sort as SortKey) : "relevance",
     ids: ids === null ? null : ids.split(",").filter(Boolean).slice(0, MAX_IDS).map(Number).filter(Number.isInteger),
     offset: clampInt(params.get("offset"), 0, 0, MAX_OFFSET),

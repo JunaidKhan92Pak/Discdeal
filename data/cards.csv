@@ -1,0 +1,4 @@
+bank_id,bank_name,bank_short,bank_aliases,card_id,card_name,card_short
+hbl,HBL,HBL,hbl|habib bank|konnect|ایچ بی ایل,hbl-konnect-debit,HBL Konnect Debit Card,HBL Konnect Debit
+bahl,Bank AL Habib,Bank AL Habib,bahl|al habib|alhabib|بینک الحبیب|الحبیب,bahl-platinum-debit,Bank AL Habib Visa Platinum Debit Card,AL Habib Platinum Debit
+bahl,Bank AL Habib,Bank AL Habib,bahl|al habib|alhabib|بینک الحبیب|الحبیب,bahl-signature,Bank AL Habib Visa Signature Card,AL Habib Signature

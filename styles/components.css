@@ -185,6 +185,9 @@
   &:focus-visible {
     @apply outline-2 outline-offset-2 outline-primary;
   }
+  &:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
 }
 
 @utility btn-secondary {

@@ -3,17 +3,18 @@
 import type { ReactNode } from "react";
 import { Toggle } from "radix-ui";
 import { BrandPicker } from "@/components/deals/BrandPicker";
+import { CardPicker } from "@/components/deals/CardPicker";
 import { Icon } from "@/components/ui/Icon";
 import { Select } from "@/components/ui/Select";
 import type { BrandChoice } from "@/hooks/useBrowseFilters";
+import type { MyCards } from "@/hooks/useMyCards";
 import type { DealsStatus } from "@/hooks/useDeals";
-import type { BrandFacet, SortKey } from "@/lib/types";
+import type { Bank, BrandFacet, Card, SortKey } from "@/lib/types";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "relevance", label: "Best match" },
   { value: "discount", label: "Biggest discount" },
   { value: "ending", label: "Ending soon" },
-  { value: "price", label: "Lowest price" },
 ];
 
 type ResultsToolbarProps = {
@@ -29,6 +30,10 @@ type ResultsToolbarProps = {
   onBrand: (brand: BrandChoice | null) => void;
   onSort: (sort: SortKey) => void;
   onToggleLiked: () => void;
+  myCards: MyCards;
+  onSaveCards: (next: MyCards) => void;
+  banks: Bank[] | null;
+  cards: Card[] | null;
   /** What search understood, shown after the count on desktop: "8 deals for [Lahore ×] [Fashion ×]". */
   understood?: ReactNode;
 };
@@ -37,7 +42,8 @@ type ResultsToolbarProps = {
  * One line above the deals: the count (and, on desktop, what search understood), then brand (phones; a Radix Dialog),
  * sort (Radix Select) and the Liked filter (Radix Toggle). Scrolls sideways on narrow phones.
  */
-export function ResultsToolbar({ total, status, sort, likedOnly, likedCount, brands, brand, brandScope, onBrand, onSort, onToggleLiked, understood }: ResultsToolbarProps) {
+export function ResultsToolbar(props: ResultsToolbarProps) {
+  const { total, status, sort, likedOnly, likedCount, brands, brand, brandScope, onBrand, onSort, onToggleLiked, understood } = props;
   return (
     <div className="-mx-gutter flex items-center gap-2 overflow-x-auto px-gutter py-1 [scrollbar-width:none] sm:mx-0 sm:px-0.5 lg:overflow-visible">
       <div className="mr-auto flex min-w-0 shrink-0 items-center gap-2 lg:shrink lg:flex-wrap">
@@ -51,6 +57,7 @@ export function ResultsToolbar({ total, status, sort, likedOnly, likedCount, bra
           </span>
         )}
       </div>
+      <CardPicker myCards={props.myCards} onSave={props.onSaveCards} banks={props.banks} cards={props.cards} />
       {/* On desktop the brand list lives in the sidebar. */}
       <div className="shrink-0 lg:hidden">
         <BrandPicker brands={brands} selected={brand} scope={brandScope} onSelect={onBrand} />

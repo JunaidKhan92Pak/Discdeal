@@ -1,12 +1,41 @@
 # DiscDeal
 
-Smart search for discounts and deals across Pakistan. Built with Next.js (App Router), React and Tailwind CSS v4.
+Smart search for discounts and deals across Pakistan, including bank-card offers ("what does my card get?").
+Built with Next.js (App Router), React and Tailwind CSS v4.
+
+**New here? Start with [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** (step by step: run it, edit deals,
+connect a database, put it online).
 
 ```bash
-npm run dev     # http://localhost:3000
+npm run dev          # http://localhost:3000
+npm run data:check   # check data/cards.csv + data/deals.csv after editing them
+npm run db:import    # create the tables and copy both spreadsheets into Postgres (needs DATABASE_URL in .env.local)
+npm run db:test      # test the database code against a built-in Postgres (no account needed)
 npm run lint
 npm run typecheck
 ```
+
+## The data
+
+The deals are **real offers** collected from the banks' own public pages on 1 Nov 2026: HBL Konnect Debit Card
+(118 offers), Bank AL Habib Visa Platinum Debit (20) and Visa Signature (9). They live in the spreadsheet
+**`data/deals.csv`**, one row per deal, with the source link and the date it was checked. Rules followed when
+collecting: only the bank's own pages (not other deal apps), never guess a missing percentage (those offers were
+left out), and when a bank lists two different numbers for one shop, use the lower one and explain it.
+
+- **Nothing about the data is written in the code.** Banks and cards live in **`data/cards.csv`** (with the words
+  people search them by, in English and Urdu); deals in `data/deals.csv`. Adding a bank, a card or a deal is a
+  spreadsheet edit. The example searches and the "N deals" numbers on the first screen are worked out from the
+  live data (`GET /api/meta`).
+- Without a database, the website reads the two spreadsheets directly. With `DATABASE_URL` set, it reads the
+  `cards` and `deals` tables in Postgres instead (`npm run db:import` creates them and copies the spreadsheets in).
+  Same checks either way (`lib/cards-csv.ts`, `lib/deals-csv.ts`).
+- Offers past their `valid_until` date are hidden automatically (Pakistan time). Offers without an end date show
+  as "Ongoing".
+- Every deal's details show where it came from, when it was checked, and link to the bank's own offer page.
+- **My cards**: people tick the cards they have (names only, saved on their own phone) and see only the deals
+  those cards get. Each deal shows which card pays; deals for your cards say "✓ Your card".
+- To add deals fast, see [docs/ADD-DEALS-WITH-CLAUDE.md](docs/ADD-DEALS-WITH-CLAUDE.md).
 
 ## How the screen works
 
@@ -22,8 +51,8 @@ header row (logo · search · city), so the results start high on the screen. Th
    - **Phones and tablets: category pills** (one tap; the chosen category opens a second row with its types) and a
      **Brand** button that opens the same brand list as a bottom sheet.
    Empty categories hide. Both layouts share one set of filters, so a choice carries over when the window resizes.
-3. **Toolbar**: number of deals · Brand (phones and tablets) · sort (best match / biggest discount / ending soon /
-   lowest price) · ♥ Liked.
+3. **Toolbar**: number of deals · 💳 My cards · Brand (phones and tablets) · sort (best match / biggest discount /
+   ending soon) · ♥ Liked.
 4. **Deals**: a grid of picture-first cards that scrolls inside its own panel. 2 columns on phones; on larger
    screens as many as fit at 17rem or wider (3 on a laptop next to the sidebar), so cards never get cramped.
    24 load at a time; **Show more deals** loads the next 24.
@@ -75,7 +104,8 @@ app/
   page.tsx               page shell: search text, saved city, "browsing" state (with a cross-fade)
   layout.tsx             fonts, theme-init script (runs before paint, no flash)
   globals.css            imports Tailwind + the two style files below
-  api/deals/route.ts     GET /api/deals: validated params → cached search → one page of results
+  api/deals/route.ts     GET /api/deals: rate limit → validated params → cached search → one page of results
+  api/meta/route.ts      GET /api/meta: banks, cards, live counts and example searches (fetched once per visit)
 styles/
   theme.css              DESIGN TOKENS: colours (light/dark), fonts, type scale, radii, widths, shadows, motion
   components.css         shared classes built from the tokens: deal-card, pill, chip, field, badge, media …
@@ -87,39 +117,70 @@ components/
   deals/                 DealsBrowser (composes the rest), IntentChips, FilterSidebar (desktop), CategoryBar (phones),
                          BrandList + BrandPicker, ResultsToolbar, ResultsGrid, DealCard, OfferText, DealModal
 hooks/
-  useDeals.ts            fetches /api/deals: debounced, cancels stale requests, caches pages, load more, retry
+  useDeals.ts            fetches /api/deals: debounced, shares identical requests, caches pages, load more, retry
+  useMeta.ts             fetches /api/meta once per visit, shared by every component
   useBrowseFilters.ts    category / subcategory pill, sort, Liked view
   useSavedCity.ts        the 📍 city, remembered in localStorage
   useLikedDeals.ts       liked ids in localStorage (external store, synced across tabs)
+  useMyCards.ts          the user's cards (names only) and "only my cards", in localStorage
 lib/
   types.ts               shared types, including the API contract (DealQuery → DealsPage)
-  taxonomy.ts            cities, categories, subcategories, channels (small; used by browser and server)
+  taxonomy.ts            cities, categories, subcategories, channels (tied to the search dictionary and icons)
+  cards-csv.ts           the banks & cards spreadsheet format
+  deals-csv.ts           the deals spreadsheet format: read it, check every row, turn rows into deals
+  db-sql.ts              the SQL for Postgres: read cards and live deals, import both spreadsheets
   query.ts               the API's URL format: build it (browser) and validate it (server)
   lexicon.ts             smart-search dictionary: English / Roman Urdu / Urdu words → meaning
   intent.ts              query text → filters + leftover words (typo-corrected)
   text.ts                tokenize, fold spelling variants, typo distance
   format.ts              price / city / date text
-  data/sample-deals.ts   SAMPLE deals (server only) until the database is connected
-  server/deals-source.ts the one switch between data sources (in-memory today, Postgres later)
-  server/search.ts       in-memory source: match + rank + relax + facets + pages
+  server/config.ts       every server setting, from environment variables, with defaults
+  server/cache.ts        memory + Redis cache, one load per key at a time, data version for instant refresh
+  server/rate-limit.ts   requests per visitor per minute (Redis if set, else per server)
+  server/catalog.ts      loads cards + live deals: Postgres if DATABASE_URL is set, else the spreadsheets
+  server/search.ts       smart search over the loaded deals: match + rank + relax + facets + pages
+data/
+  cards.csv              THE BANKS AND CARDS, with their search words
+  deals.csv              THE DEALS (real, with sources). Edit in Excel / Google Sheets
+  deals-template.csv     empty copy with two example rows
 db/
-  schema.sql             Postgres tables, indexes and the reference search query (not yet run against a database)
+  schema.sql             the Postgres `cards` and `deals` tables (db:import runs it for you)
+scripts/
+  check-deals.mts        npm run data:check
+  import-deals.mts       npm run db:import
+  test-db.mts            npm run db:test (runs everything against PGlite, a Postgres inside Node)
+docs/
+  GETTING-STARTED.md     beginner's guide: run, edit deals, Supabase, Vercel, domain
+  ADD-DEALS-WITH-CLAUDE.md  a ready prompt to turn bank offer pages/PDFs into spreadsheet rows
 ```
 
-Data flows one way: `page.tsx` → `DealsBrowser` → `useDeals` → `GET /api/deals` → `lib/server/deals-source.ts`.
+Data flows one way: `page.tsx` → `DealsBrowser` → `useDeals` → `GET /api/deals` → `lib/server/cache.ts`
+→ `lib/server/search.ts` → `lib/server/catalog.ts` (spreadsheets or Postgres).
 The deal data never ships to the browser; only one page of results does.
 
 ## Ready for a database and real traffic
 
 - **The API contract is fixed** (`DealQuery` → `DealsPage` in `lib/types.ts`): filters, sort, `offset`/`limit` paging,
   per-category counts, and what smart search understood. The UI only knows this contract.
-- **Moving to Postgres** = write `searchPostgres()` with the same signature and switch the export in
-  `lib/server/deals-source.ts`. `db/schema.sql` has the tables, an index behind every filter (including a trigram
-  index for typo-tolerant text matching) and the query to start from. The UI does not change.
-- **Caching in three layers**, so a burst of identical searches costs one database query:
-  1. the browser keeps the last 60 pages it fetched (back to an earlier search = instant);
-  2. the server caches each distinct query for a minute (`"use cache"` + `cacheLife("minutes")` in the route);
-  3. the CDN caches responses (`s-maxage=60, stale-while-revalidate=300`).
+- **Postgres is ready**: set `DATABASE_URL` and the site reads the `deals` table (tested end to end with
+  `npm run db:test`). The live deals are loaded into memory once a minute and searched there, which is fast for
+  thousands of deals. At tens of thousands, move the filtering into SQL (pg_trgm) or a search engine
+  (Meilisearch/Typesense); the API and the UI do not change.
+- **Few requests from the browser**: typing waits 200 ms after the last key, one-letter searches are not sent,
+  two components asking for the same page share one request, and the last 60 pages are kept for the tab (back to
+  an earlier search = instant). `/api/meta` is fetched once per visit.
+- **Caching on the server, in layers**, so a burst of identical searches costs one database query at most:
+  1. the CDN serves repeated searches without reaching the server (`s-maxage=60, stale-while-revalidate=300`);
+  2. each server keeps the last 500 answers in memory;
+  3. with Redis (Upstash) set, answers are shared by every server, so a new server starts warm;
+  4. the deals themselves are loaded once a minute, and only once even if 100 searches arrive together.
+  The response header `X-Cache` says which layer answered (`memory`, `redis` or `fresh`).
+- **Instant refresh after an import**: `npm run db:import` bumps a data version in Redis; every cached answer is
+  keyed by it, so the site shows new deals within seconds instead of waiting for caches to expire.
+- **Rate limit**: one visitor may make 120 searches a minute (`RATE_LIMIT_PER_MINUTE`); more gets `429` with
+  `Retry-After`. Shared across servers with Redis, per server without.
+- **Every limit is a setting**: cache times and the rate limit are environment variables (see `.env.example`), all
+  optional with sensible defaults. Without Redis everything still works, cached per server.
 - **Untrusted input is bounded**: unknown ids are dropped, `limit` ≤ 48, `offset` ≤ 2000, text ≤ 120 characters,
   at most 200 liked ids. Errors return JSON with status 500 and the UI offers "Try again".
 - **Long lists stay smooth**: cards off screen skip layout and paint (`content-visibility: auto`).
@@ -144,7 +205,8 @@ People type the way they talk: `discount on cloth in lahore`, `kapry lhaore`, `�
 `lib/server/search.ts` then filters and ranks. It never shows an empty screen when it can avoid it: it relaxes the
 city first, then requires *any* word instead of all of them, then ignores unknown words, and tells the user what it did.
 
-**To teach it a new word**, add it to the right line in `lib/lexicon.ts`. To add a city, add it to `CITIES` in
+**To teach it a new word**, add it to the right line in `lib/lexicon.ts`. Bank names are not there: they come
+from the `bank_aliases` column of `data/cards.csv` ("hbl|habib bank|ایچ بی ایل"). To add a city, add it to `CITIES` in
 `lib/taxonomy.ts`, to `CityId` in `lib/types.ts`, and to `lib/lexicon.ts`.
 
 ## Rules that keep the UI consistent
@@ -181,8 +243,6 @@ city first, then requires *any* word instead of all of them, then ignores unknow
 
 ## Adding data
 
-Until the database is connected, add an entry to `RAW` in `lib/data/sample-deals.ts`. Write the `title` as what you
-get, without the discount ("Unstitched lawn, 3-piece"); add `offer` only when the headline is not a plain percentage
-("Buy 1 Get 1"). Pick a `subcategory` id from
-`CATEGORIES`, the `cities` (empty = nationwide), the `channels`, a few search `tags`, an `icon`, and optionally an
-`image` URL. Prices are in PKR.
+Add a row to `data/deals.csv` (columns explained in docs/GETTING-STARTED.md), then run `npm run data:check`.
+Write the `title` as what you get, without the discount ("Fast food bill"); fill `offer` only when the headline is
+not a plain percentage ("Free", "Buy 1 Get 1"). Always fill `source_url` and `checked_on`.

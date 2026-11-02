@@ -4,15 +4,17 @@
  */
 import type { IconName } from "@/components/ui/Icon";
 import { CATEGORIES, CHANNELS, CITIES } from "@/lib/taxonomy";
-import { LEXICON, type Concept } from "@/lib/lexicon";
+import { bankLexicon, type Concept } from "@/lib/lexicon";
 import { closest, fold, tokenize } from "@/lib/text";
-import type { CategoryId, Channel, CityId, IntentPart } from "@/lib/types";
+import type { Bank, BankId, CategoryId, Channel, CityId, IntentPart } from "@/lib/types";
 
 export type SearchIntent = {
   cities: CityId[];
   categories: CategoryId[];
   subs: string[];
   channels: Channel[];
+  /** Only deals for these banks' cards. */
+  banks: BankId[];
   minDiscount: number | null;
   maxPrice: number | null;
   endingSoon: boolean;
@@ -32,14 +34,16 @@ function readNumber(token: string): number | null {
 }
 
 /**
+ * @param banks  banks from the data; their aliases ("hbl", "al habib") become search words.
  * @param vocab every folded word that appears in the deals → how to display it. Used to correct typos in
  *              brand and product names ("khadi" → Khaadi, "burgr" → burger).
  */
-export function parseIntent(query: string, vocab: Map<string, string>): SearchIntent {
+export function parseIntent(query: string, vocab: Map<string, string>, banks: Bank[] = []): SearchIntent {
+  const lexicon = bankLexicon(banks);
   const raw = tokenize(query);
   const folded = raw.map(fold);
   const intent: SearchIntent = {
-    cities: [], categories: [], subs: [], channels: [],
+    cities: [], categories: [], subs: [], channels: [], banks: [],
     minDiscount: null, maxPrice: null, endingSoon: false, terms: [], boost: [], parts: [],
   };
   const parts = new Map<string, IntentPart>();
@@ -95,6 +99,12 @@ export function parseIntent(query: string, vocab: Map<string, string>): SearchIn
         addPart({ key: `channel:${concept.id}`, kind: "channel", label, icon, typed }, words);
         break;
       }
+      case "bank": {
+        if (!intent.banks.includes(concept.id)) intent.banks.push(concept.id);
+        const label = `${banks.find((b) => b.id === concept.id)?.short ?? concept.id} cards`;
+        addPart({ key: `bank:${concept.id}`, kind: "bank", label, icon: "card", typed }, words);
+        break;
+      }
       case "ending":
         intent.endingSoon = true;
         addPart({ key: "ending", kind: "ending", label: "Ending soon", icon: "watch", typed }, words);
@@ -118,15 +128,15 @@ export function parseIntent(query: string, vocab: Map<string, string>): SearchIn
     if (value !== null) {
       const next = folded[i + 1];
       const nextPhrase = i + 2 < raw.length ? `${next} ${folded[i + 2]}` : "";
-      if (next !== undefined && (LEXICON.get(next)?.kind === "percent" || next === "off")) {
+      if (next !== undefined && (lexicon.get(next)?.kind === "percent" || next === "off")) {
         setDiscount(value, [raw[i], raw[i + 1]]);
         i++;
       } else if (pricePrefix) {
         setPrice(value, [...pricePrefix, raw[i]]);
-      } else if (nextPhrase && LEXICON.get(nextPhrase)?.kind === "price-after") {
+      } else if (nextPhrase && lexicon.get(nextPhrase)?.kind === "price-after") {
         setPrice(value, [raw[i], raw[i + 1], raw[i + 2]]);
         i += 2;
-      } else if (next !== undefined && LEXICON.get(next)?.kind === "price-after") {
+      } else if (next !== undefined && lexicon.get(next)?.kind === "price-after") {
         setPrice(value, [raw[i], raw[i + 1]]);
         i++;
       } else if (value >= 100) {
@@ -140,7 +150,7 @@ export function parseIntent(query: string, vocab: Map<string, string>): SearchIn
 
     // Two-word phrases first ("fast food", "home delivery", "اسلام آباد"), then single words.
     if (i + 1 < raw.length) {
-      const phrase = LEXICON.get(`${folded[i]} ${folded[i + 1]}`);
+      const phrase = lexicon.get(`${folded[i]} ${folded[i + 1]}`);
       if (phrase) {
         pricePrefix = phrase.kind === "price-before" ? [raw[i], raw[i + 1]] : null;
         apply(phrase, [raw[i], raw[i + 1]], `${folded[i]} ${folded[i + 1]}`);
@@ -150,14 +160,14 @@ export function parseIntent(query: string, vocab: Map<string, string>): SearchIn
     }
 
     let word = folded[i];
-    let concept = LEXICON.get(word);
+    let concept = lexicon.get(word);
     let typed: string | undefined;
 
     // A known brand/product word is never "corrected" into a category.
     if (!concept && !vocab.has(word)) {
-      const near = closest(word, LEXICON.keys(), isLast);
+      const near = closest(word, lexicon.keys(), isLast);
       if (near) {
-        concept = LEXICON.get(near);
+        concept = lexicon.get(near);
         typed = raw[i];
         word = near;
       }

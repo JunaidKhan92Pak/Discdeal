@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { DealCard } from "@/components/deals/DealCard";
 import type { DealsStatus } from "@/hooks/useDeals";
-import type { CityId, Deal } from "@/lib/types";
+import type { Card, CityId, Deal } from "@/lib/types";
 
 type ResultsGridProps = {
   items: Deal[];
@@ -15,6 +15,9 @@ type ResultsGridProps = {
   emptyMessage: string;
   likedIds: number[];
   searchedCities: CityId[];
+  /** The user's saved cards: deals they get are marked "Your card". */
+  myCardIds: string[];
+  cards: Card[];
   /** Scrolls back to the top whenever this changes (a new search or filter). */
   resetKey: string;
   onToggleLike: (id: number) => void;
@@ -68,7 +71,7 @@ export function ResultsGrid(props: ResultsGridProps) {
       <ul className={`${GRID} transition-opacity duration-200 ${status === "refreshing" ? "opacity-60" : "opacity-100"}`}>
         {items.map((deal, i) => (
           <li key={deal.id}>
-            <DealCard deal={deal} index={i} liked={likedIds.includes(deal.id)} searchedCities={searchedCities} onToggleLike={props.onToggleLike} onOpen={props.onOpen} />
+            <DealCard deal={deal} index={i} liked={likedIds.includes(deal.id)} searchedCities={searchedCities} myCardIds={props.myCardIds} cards={props.cards} onToggleLike={props.onToggleLike} onOpen={props.onOpen} />
           </li>
         ))}
       </ul>

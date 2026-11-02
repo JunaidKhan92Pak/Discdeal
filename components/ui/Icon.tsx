@@ -36,6 +36,7 @@ const PATHS = {
 
   // interface
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
+  card: <><rect x="2.5" y="5" width="19" height="14" rx="2" /><path d="M2.5 10h19M6 15h4" /></>,
   pin: <><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   check: <path d="m5 12 5 5L20 7" />,

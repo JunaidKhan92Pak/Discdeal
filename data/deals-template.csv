@@ -1,0 +1,3 @@
+brand,offer,discount_pct,title,description,category,subcategory,cities,channels,card_ids,price,original_price,code,valid_until,source_url,checked_on,tags,image_url
+Example Pizza,,20,Fast food bill,"Maximum discount PKR 2,000. Dine-in only.",food,food-fastfood,lahore;karachi,in-store,hbl-konnect-debit,,,,2026-12-31,https://www.example-bank.com/offers/example-pizza,2026-11-01,pizza,
+Example Clothing,Up to 50% OFF,50,Winter collection,"Brand's own sale, no card needed.",fashion,fashion-clothing,,in-store;online,,2500,5000,,2026-12-15,https://www.example-brand.com/sale,2026-11-01,lawn women,

@@ -12,16 +12,28 @@ type Filters = Omit<DealQuery, "offset" | "limit">;
 /* Pages already fetched in this tab, by URL (most recent last). Going back to an earlier search is instant. */
 const cache = new Map<string, DealsPage>();
 const CACHE_LIMIT = 60;
+/* Requests on their way: asking for the same page again joins the same request instead of sending another. */
+const inflight = new Map<string, Promise<DealsPage>>();
 
-async function fetchPage(url: string, signal?: AbortSignal): Promise<DealsPage> {
+/** Typing waits this long after the last key before asking the server (fewer requests, still feels instant). */
+const TYPING_DELAY_MS = 200;
+
+function fetchPage(url: string): Promise<DealsPage> {
   const hit = cache.get(url);
-  if (hit) return hit;
-  const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`GET ${url} → ${response.status}`);
-  const page = (await response.json()) as DealsPage;
-  cache.set(url, page);
-  if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
-  return page;
+  if (hit) return Promise.resolve(hit);
+  const pending = inflight.get(url);
+  if (pending) return pending;
+  const request = fetch(url)
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`GET ${url} → ${response.status}`);
+      const page = (await response.json()) as DealsPage;
+      cache.set(url, page);
+      if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+      return page;
+    })
+    .finally(() => inflight.delete(url));
+  inflight.set(url, request);
+  return request;
 }
 
 function urlFor(filters: Filters, offset: number): string {
@@ -40,11 +52,13 @@ function useDebounced<T>(value: T, delay: number): T {
 type Loaded = { key: string; items: Deal[]; page: DealsPage | null; error: boolean; loadingMore: boolean; moreFailed: boolean };
 
 /**
- * Deals for the current filters from /api/deals. Typing is debounced, a newer request cancels the older one,
- * and the previous results stay on screen (dimmed) until the new ones arrive, so the list never flashes empty.
+ * Deals for the current filters from /api/deals. Typing is debounced, one-letter searches are not sent, identical
+ * requests are shared, answers are kept for the tab, and an outdated answer is ignored (but still cached for later).
+ * The previous results stay on screen (dimmed) until the new ones arrive, so the list never flashes empty.
  */
 export function useDeals(input: Filters) {
-  const filters: Filters = { ...input, q: useDebounced(input.q.trim(), 150) };
+  const typed = useDebounced(input.q.trim(), TYPING_DELAY_MS);
+  const filters: Filters = { ...input, q: typed.length < 2 ? "" : typed };
   const key = urlFor(filters, 0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -55,13 +69,18 @@ export function useDeals(input: Filters) {
 
   useEffect(() => {
     if (cache.has(key)) return;
-    const controller = new AbortController();
-    fetchPage(key, controller.signal)
-      .then((page) => setLoaded({ key, items: page.results, page, error: false, loadingMore: false, moreFailed: false }))
+    // Not aborted when outdated: the answer still lands in the cache, so going back to that search is instant.
+    let outdated = false;
+    fetchPage(key)
+      .then((page) => {
+        if (!outdated) setLoaded({ key, items: page.results, page, error: false, loadingMore: false, moreFailed: false });
+      })
       .catch(() => {
-        if (!controller.signal.aborted) setLoaded({ key, items: [], page: null, error: true, loadingMore: false, moreFailed: false });
+        if (!outdated) setLoaded({ key, items: [], page: null, error: true, loadingMore: false, moreFailed: false });
       });
-    return () => controller.abort();
+    return () => {
+      outdated = true;
+    };
   }, [key, attempt]);
 
   const shown = current ?? (loaded && !loaded.error ? loaded : null);

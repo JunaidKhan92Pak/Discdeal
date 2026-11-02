@@ -1,7 +1,10 @@
 /**
- * The fixed vocabulary of the app: cities, categories and redemption channels.
- * Small and shared by browser and server. The deals themselves live in the data source (lib/server).
+ * The fixed vocabulary of the app: cities, categories and redemption channels. These stay in code because the
+ * search dictionary (lib/lexicon.ts: English, Roman Urdu and Urdu words) and the icons are tied to them.
+ * Everything that grows is data, not code: deals (data/deals.csv) and banks/cards (data/cards.csv), or the
+ * matching database tables.
  */
+import type { IconName } from "@/components/ui/Icon";
 import type { Category, Channel, City } from "@/lib/types";
 
 export const CITIES: City[] = [
@@ -11,6 +14,14 @@ export const CITIES: City[] = [
   { id: "rawalpindi", label: "Rawalpindi" },
   { id: "faisalabad", label: "Faisalabad" },
   { id: "multan", label: "Multan" },
+  { id: "hyderabad", label: "Hyderabad" },
+  { id: "sialkot", label: "Sialkot" },
+  { id: "gujranwala", label: "Gujranwala" },
+  { id: "peshawar", label: "Peshawar" },
+  { id: "quetta", label: "Quetta" },
+  { id: "sahiwal", label: "Sahiwal" },
+  { id: "bahawalpur", label: "Bahawalpur" },
+  { id: "sargodha", label: "Sargodha" },
 ];
 
 export const CHANNELS: { id: Channel; label: string }[] = [
@@ -23,7 +34,7 @@ export const CATEGORIES: Category[] = [
   {
     id: "food", label: "Food & Restaurants", short: "Food", icon: "utensils",
     subcategories: [
-      { id: "food-restaurants", label: "Restaurants & desi food" },
+      { id: "food-restaurants", label: "Restaurants & dining" },
       { id: "food-fastfood", label: "Pizza, burgers & fast food" },
       { id: "food-cafes", label: "Cafes, bakeries & desserts" },
     ],
@@ -64,6 +75,7 @@ export const CATEGORIES: Category[] = [
     subcategories: [
       { id: "travel-hotels", label: "Hotels & stays" },
       { id: "travel-flights", label: "Flights & tours" },
+      { id: "travel-lounges", label: "Airport lounges" },
       { id: "travel-rides", label: "Rides & car rental" },
     ],
   },
@@ -78,7 +90,37 @@ export const CATEGORIES: Category[] = [
     id: "entertainment", label: "Entertainment", short: "Fun", icon: "film",
     subcategories: [
       { id: "entertainment-cinema", label: "Cinema" },
+      { id: "entertainment-play", label: "Play, games & sports" },
+      { id: "entertainment-books", label: "Books" },
       { id: "entertainment-streaming", label: "Streaming & music" },
     ],
   },
 ];
+
+/** The picture shown for a deal without its own image. */
+export const SUB_ICONS: Record<string, IconName> = {
+  "food-restaurants": "utensils",
+  "food-fastfood": "pizza",
+  "food-cafes": "coffee",
+  "fashion-clothing": "shirt",
+  "fashion-shoes": "shoe",
+  "fashion-accessories": "watch",
+  "electronics-mobiles": "phone",
+  "electronics-appliances": "tv",
+  "electronics-laptops": "laptop",
+  "health-salon": "scissors",
+  "health-skincare": "sparkles",
+  "health-pharmacy": "pill",
+  "grocery-supermarkets": "cart",
+  "grocery-online": "cart",
+  "travel-hotels": "bed",
+  "travel-flights": "plane",
+  "travel-lounges": "plane",
+  "travel-rides": "car",
+  "home-furniture": "sofa",
+  "home-decor": "home",
+  "entertainment-cinema": "film",
+  "entertainment-play": "star",
+  "entertainment-books": "book",
+  "entertainment-streaming": "music",
+};

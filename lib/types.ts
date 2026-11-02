@@ -10,7 +10,41 @@ export type CategoryId =
   | "home"
   | "entertainment";
 
-export type CityId = "lahore" | "karachi" | "islamabad" | "rawalpindi" | "faisalabad" | "multan";
+export type CityId =
+  | "lahore"
+  | "karachi"
+  | "islamabad"
+  | "rawalpindi"
+  | "faisalabad"
+  | "multan"
+  | "hyderabad"
+  | "sialkot"
+  | "gujranwala"
+  | "peshawar"
+  | "quetta"
+  | "sahiwal"
+  | "bahawalpur"
+  | "sargodha";
+
+/** Banks and cards are data (data/cards.csv or the `cards` table), not code: ids like "hbl", "hbl-konnect-debit". */
+export type BankId = string;
+
+export type Bank = {
+  id: BankId;
+  name: string;
+  short: string;
+  /** Words people type for this bank ("hbl", "habib bank", "konnect", Urdu…): smart search learns them. */
+  aliases: string[];
+};
+
+/** One card product a deal can need, e.g. "HBL Konnect Debit Card". */
+export type Card = { id: string; bank: BankId; name: string; /** For deal cards: "HBL Konnect Debit" */ short: string };
+
+/** Live numbers about the data, for honest copy ("146 discounts …"). */
+export type CatalogStats = { deals: number; brands: number; cities: number; banks: number; cards: number };
+
+/** Everything the browser needs besides deals: banks and cards, live stats, and example searches that match the data. */
+export type CatalogMeta = { banks: Bank[]; cards: Card[]; stats: CatalogStats; suggestions: string[] };
 
 /** How the deal is redeemed. */
 export type Channel = "in-store" | "delivery" | "online";
@@ -44,12 +78,18 @@ export type Deal = {
   description: string;
   category: CategoryId;
   subcategory: string;
-  /** Prices in PKR. */
-  price: number;
-  originalPrice: number;
+  /** Prices in PKR, when the offer has fixed prices (bank card discounts usually do not). */
+  price?: number;
+  originalPrice?: number;
+  /** 0 when the offer is not a percentage (then `offer` says what it is, e.g. "Free"). */
   discountPct: number;
   code?: string;
-  endsInDays: number;
+  /** Last day of the offer (YYYY-MM-DD, Pakistan time), or null when the source gives no end date. */
+  endsAt: string | null;
+  /** Days left, worked out on the server when the data is loaded; null = ongoing. Expired deals are never sent. */
+  endsInDays: number | null;
+  /** Cards that get this deal (Card ids). Empty = no card needed. */
+  cards: string[];
   /** Cities with a branch that honours the deal. Empty = nationwide. */
   cities: CityId[];
   channels: Channel[];
@@ -59,7 +99,10 @@ export type Deal = {
   icon: IconName;
   /** Optional real product/offer image URL. */
   image?: string;
-  url: string;
+  /** Where the offer was found (the bank's or brand's own page). Shown as the source, and the "view offer" link. */
+  sourceUrl: string;
+  /** When someone last checked the source (YYYY-MM-DD). */
+  checkedAt: string;
 };
 
 export type SortKey = "relevance" | "discount" | "ending" | "price";
@@ -75,6 +118,8 @@ export type DealQuery = {
   sort: SortKey;
   /** Only this brand (a Deal.brandId). null = every brand. */
   brand: string | null;
+  /** Only deals these cards get (Card ids; the user's "My cards"). null = no restriction. */
+  cards: string[] | null;
   /** Only deals with these ids (the user's liked deals). null = no restriction. */
   ids: number[] | null;
   offset: number;
@@ -87,7 +132,7 @@ export type BrandFacet = { id: string; name: string; count: number };
 /** One thing smart search understood from the query, shown as a removable chip. */
 export type IntentPart = {
   key: string;
-  kind: "city" | "category" | "channel" | "discount" | "price" | "ending" | "term";
+  kind: "city" | "category" | "channel" | "bank" | "discount" | "price" | "ending" | "term";
   label: string;
   icon: IconName;
   /** The query words this part came from (removing the chip removes them). */

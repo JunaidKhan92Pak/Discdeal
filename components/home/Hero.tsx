@@ -1,6 +1,14 @@
-type HeroProps = { collapsed: boolean };
+import type { CatalogStats } from "@/lib/types";
 
-export function Hero({ collapsed }: HeroProps) {
+type HeroProps = {
+  collapsed: boolean;
+  /** Live numbers from the data (null while loading), so the claim on the page is always true. */
+  stats: CatalogStats | null;
+};
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+export function Hero({ collapsed, stats }: HeroProps) {
   return (
     <div
       className={`grid transition-[grid-template-rows,opacity] motion-layout ${
@@ -11,7 +19,7 @@ export function Hero({ collapsed }: HeroProps) {
       <section className="overflow-hidden text-center">
         <p className="eyebrow inline-flex items-center gap-2">
           <span className="size-2 rounded-full bg-save" />
-          thousands of discounts, one search
+          {stats ? `${plural(stats.deals, "live discount")} · ${plural(stats.cards, "bank card")} · ${`${stats.cities} ${stats.cities === 1 ? "city" : "cities"}`}` : "Live discounts across Pakistan"}
         </p>
         <h1 className="mx-auto mt-4 max-w-hero text-display">
           Find the deal.

@@ -7,11 +7,13 @@ import { Hero } from "@/components/home/Hero";
 import { QuickSearches } from "@/components/home/QuickSearches";
 import { SearchBar } from "@/components/home/SearchBar";
 import { DealsBrowser } from "@/components/deals/DealsBrowser";
+import { useMeta } from "@/hooks/useMeta";
 import { useSavedCity } from "@/hooks/useSavedCity";
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const { city, setCity } = useSavedCity();
+  const meta = useMeta();
   const [focused, setFocused] = useState(false);
   // Nothing but the search screen is shown until the user searches.
   const [browsing, setBrowsing] = useState(false);
@@ -73,7 +75,7 @@ export default function Home() {
         <div className="flex h-full flex-col">
           <div className={`min-h-2 transition-[flex-grow] motion-layout ${browsing ? "hidden" : active ? "grow-[.001]" : "grow"}`} />
 
-          {!browsing && <Hero collapsed={active} />}
+          {!browsing && <Hero collapsed={active} stats={meta?.stats ?? null} />}
 
           <div className={browsing ? "pt-3 lg:pt-0" : `transition-[padding] motion-layout ${active ? "pt-4" : "pt-0"}`}>
             <SearchBar
@@ -84,7 +86,7 @@ export default function Home() {
               onBlur={handleBlur}
               onSubmit={() => changeBrowsing(true)}
             />
-            {!browsing && <QuickSearches onPick={pickExample} />}
+            {!browsing && <QuickSearches examples={meta?.suggestions ?? []} onPick={pickExample} />}
           </div>
 
           {!browsing && <div className="min-h-2 grow" />}

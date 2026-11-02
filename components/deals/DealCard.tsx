@@ -4,19 +4,30 @@ import { OfferText } from "@/components/deals/OfferText";
 import { Icon } from "@/components/ui/Icon";
 import { LikeButton } from "@/components/ui/LikeButton";
 import { MagicCard } from "@/components/ui/MagicCard";
-import { formatCities, formatEnds, formatPrice, isEndingSoon } from "@/lib/format";
-import type { CityId, Deal } from "@/lib/types";
+import { formatCards, formatCities, formatEnds, formatPrice, isEndingSoon } from "@/lib/format";
+import type { Card, CityId, Deal } from "@/lib/types";
 
-type DealCardProps = { deal: Deal; index: number; liked: boolean; searchedCities: CityId[]; onToggleLike: (id: number) => void; onOpen: (deal: Deal) => void };
+type DealCardProps = {
+  deal: Deal;
+  index: number;
+  liked: boolean;
+  searchedCities: CityId[];
+  myCardIds: string[];
+  /** Card names from the data, to show which card a deal needs. */
+  cards: Card[];
+  onToggleLike: (id: number) => void;
+  onOpen: (deal: Deal) => void;
+};
 
 /**
  * One deal, one fact per line, in the order people decide:
- * picture → the discount (biggest) → what you get → who gives it → price → when it ends and where.
+ * picture → the discount (biggest) → what you get → who gives it → price, or the card you need → when it ends and where.
  * Nothing is said twice; the saving in rupees, the code and how to use it are in the details.
  * The whole card opens the details; the heart is its own button. Built on Magic UI's MagicCard (mouse spotlight).
  */
-export function DealCard({ deal, index, liked, searchedCities, onToggleLike, onOpen }: DealCardProps) {
+export function DealCard({ deal, index, liked, searchedCities, myCardIds, cards, onToggleLike, onOpen }: DealCardProps) {
   const urgent = isEndingSoon(deal.endsInDays);
+  const mine = deal.cards.some((id) => myCardIds.includes(id));
 
   return (
     <MagicCard className="deal-card h-full animate-rise rounded-card">
@@ -47,15 +58,24 @@ export function DealCard({ deal, index, liked, searchedCities, onToggleLike, onO
 
           <p className="mt-1 truncate text-caption font-semibold text-soft">{deal.brand}</p>
 
-          <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
-            <strong className="text-body font-bold tabular-nums text-ink">{formatPrice(deal.price)}</strong>
-            <s className="text-caption tabular-nums text-muted">{formatPrice(deal.originalPrice)}</s>
-          </p>
+          {deal.price !== undefined && deal.originalPrice !== undefined && (
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
+              <strong className="text-body font-bold tabular-nums text-ink">{formatPrice(deal.price)}</strong>
+              <s className="text-caption tabular-nums text-muted">{formatPrice(deal.originalPrice)}</s>
+            </p>
+          )}
+
+          {deal.cards.length > 0 && (
+            <p className={`mt-2 inline-flex min-w-0 items-center gap-1.5 text-caption font-semibold ${mine ? "text-save" : "text-primary"}`}>
+              <Icon name={mine ? "check" : "card"} className="size-4 shrink-0" strokeWidth={mine ? 2.5 : 1.75} />
+              <span className="truncate">{mine ? `Your card: ${formatCards(deal.cards, cards, myCardIds)}` : formatCards(deal.cards, cards)}</span>
+            </p>
+          )}
 
           <p className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-3 text-caption">
             <span className={`inline-flex items-center gap-1 ${urgent ? "font-semibold text-urgent" : "text-soft"}`}>
               <Icon name="clock" className="size-3.5 shrink-0" />
-              {formatEnds(deal.endsInDays)}
+              {formatEnds(deal.endsInDays, deal.endsAt)}
             </span>
             <span className="inline-flex min-w-0 items-center gap-1 text-soft">
               <Icon name="pin" className="size-3.5 shrink-0" />

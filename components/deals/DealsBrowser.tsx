@@ -10,6 +10,8 @@ import { ResultsToolbar } from "@/components/deals/ResultsToolbar";
 import { useBrowseFilters } from "@/hooks/useBrowseFilters";
 import { useDeals } from "@/hooks/useDeals";
 import { useLikedDeals } from "@/hooks/useLikedDeals";
+import { useMeta } from "@/hooks/useMeta";
+import { useMyCards } from "@/hooks/useMyCards";
 import { removeWords } from "@/lib/intent";
 import { CATEGORIES } from "@/lib/taxonomy";
 import type { CityId, Deal, IntentPart } from "@/lib/types";
@@ -23,12 +25,15 @@ type DealsBrowserProps = { query: string; city: CityId | null; onQueryChange: (q
 export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) {
   const filters = useBrowseFilters();
   const { liked, toggle } = useLikedDeals();
+  const { myCards, save: saveCards } = useMyCards();
+  const meta = useMeta();
   const { items, page, status, loadingMore, moreFailed, loadMore, retry } = useDeals({
     q: query,
     city,
     category: filters.category,
     sub: filters.sub,
     brand: filters.brand?.id ?? null,
+    cards: myCards.only ? myCards.cards : null,
     sort: filters.sort,
     ids: filters.likedOnly ? liked : null,
   });
@@ -66,7 +71,9 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
     ? liked.length === 0
       ? "You haven’t liked any deals yet. Tap the heart on a deal to save it here."
       : "None of your liked deals match these filters."
-    : filters.brand
+    : myCards.only
+      ? `None of your cards have a deal here${trimmed ? ` for “${trimmed}”` : ""} yet. Choose “Show all deals” in My cards to see everything.`
+      : filters.brand
       ? `No ${filters.brand.name} deals match${trimmed ? ` “${trimmed}”` : " these filters"}. Choose “All brands” to see more.`
       : `No deals found${trimmed ? ` for “${trimmed}”` : ""}. Try another word or category.`;
 
@@ -122,6 +129,10 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
           onBrand={filters.selectBrand}
           onSort={filters.setSort}
           onToggleLiked={filters.toggleLiked}
+          myCards={myCards}
+          onSaveCards={saveCards}
+          banks={meta?.banks ?? null}
+          cards={meta?.cards ?? null}
           understood={parts.length > 0 ? <IntentChips parts={parts} onRemove={removePart} variant="inline" /> : undefined}
         />
 
@@ -138,7 +149,9 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
             emptyMessage={emptyMessage}
             likedIds={liked}
             searchedCities={searchedCities}
-            resetKey={`${filters.category}-${filters.sub}-${filters.brand?.id}-${filters.sort}-${filters.likedOnly}-${city}-${items[0]?.id}`}
+          myCardIds={myCards.cards}
+          cards={meta?.cards ?? []}
+            resetKey={`${filters.category}-${filters.sub}-${filters.brand?.id}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
             onToggleLike={toggle}
             onOpen={openDeal}
             onLoadMore={loadMore}
@@ -148,7 +161,7 @@ export function DealsBrowser({ query, city, onQueryChange }: DealsBrowserProps) 
       </div>
 
       {selected && (
-        <DealModal deal={selected} open={detailsOpen} returnFocusTo={openerRef} liked={liked.includes(selected.id)} onToggleLike={toggle} onOpenChange={setDetailsOpen} onShowBrand={showBrand} />
+        <DealModal deal={selected} myCardIds={myCards.cards} cards={meta?.cards ?? []} open={detailsOpen} returnFocusTo={openerRef} liked={liked.includes(selected.id)} onToggleLike={toggle} onOpenChange={setDetailsOpen} onShowBrand={showBrand} />
       )}
     </section>
   );

@@ -1,0 +1,48 @@
+# Imports data/cards.csv + data/deals.csv into the database every time they change on GitHub.
+# Runs on GitHub's servers, so it works even when your own network blocks database ports.
+#
+# One-time setup (GitHub → this repository → Settings → Secrets and variables → Actions → New repository secret):
+#   DATABASE_URL              same value as in .env.local (required)
+#   UPSTASH_REDIS_REST_URL    optional: lets the import refresh the website's cache at once
+#   UPSTASH_REDIS_REST_TOKEN  optional
+# Without DATABASE_URL the workflow only checks the spreadsheets and skips the import.
+# You can also run it by hand: Actions → "Import deals" → Run workflow.
+name: Import deals
+
+on:
+  push:
+    branches: [master]
+    paths: ["data/**", "db/schema.sql", ".github/workflows/import-deals.yml", "lib/deals-csv.ts", "lib/cards-csv.ts", "lib/db-sql.ts", "scripts/import-deals.mts"]
+  workflow_dispatch:
+
+# Two imports never run at the same time; a newer push waits for the older one.
+concurrency:
+  group: import-deals
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the spreadsheets
+        run: npm run data:check
+      - name: Import into the database
+        if: env.DATABASE_URL != ''
+        run: npm run db:import
+      - name: No database secret yet
+        if: env.DATABASE_URL == ''
+        run: echo "::notice::DATABASE_URL secret is not set, so nothing was imported. See the comment at the top of .github/workflows/import-deals.yml."

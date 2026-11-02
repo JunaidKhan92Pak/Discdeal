@@ -108,6 +108,20 @@ One row per card; repeat the bank columns for a bank's second card. Then use the
 website shows the change within about a minute (within seconds with Redis, Part 3b). You can also edit rows
 directly in Supabase's Table Editor.
 
+**If `npm run db:import` says `CONNECT_TIMEOUT`**, your network (often office or university Wi-Fi) blocks database
+ports 5432/6543. Ordinary websites still open, so it is easy to miss. Either connect to mobile data and run it again,
+or let GitHub do the import (below), which never touches your network.
+
+**Let GitHub import for you (recommended).** `.github/workflows/import-deals.yml` imports the spreadsheets every time
+`data/` changes on GitHub. One-time setup:
+1. GitHub → your repository → **Settings → Secrets and variables → Actions → New repository secret**.
+2. Name `DATABASE_URL`, value: the same line as in `.env.local` (only the part after `DATABASE_URL=`, without
+   quotes). Optionally add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` the same way.
+3. **Actions → Import deals → Run workflow** to import now. ✔ A green tick means it worked; click it to see
+   `Imported … deals`.
+
+From then on: edit the spreadsheet → commit and push → GitHub imports it within a minute or two.
+
 ---
 
 ## Part 3b (optional): Add Redis for a faster, shared cache (Upstash, free)

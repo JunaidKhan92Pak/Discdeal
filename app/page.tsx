@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { flushSync } from "react-dom";
+import { AuthDialog } from "@/components/auth/AuthDialog";
 import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/home/Hero";
 import { QuickSearches } from "@/components/home/QuickSearches";
@@ -104,6 +105,9 @@ export default function Home() {
       <footer className={`shrink-0 justify-center pt-3 text-caption text-muted [@media(max-height:34rem)]:hidden ${browsing ? "hidden sm:flex" : "flex"}`}>
         Prices and offers may change. Please check with the store.
       </footer>
+
+      {/* One log-in window for the whole page; anything that needs an account opens it (see useAccount). */}
+      <AuthDialog city={city} />
     </main>
   );
 }

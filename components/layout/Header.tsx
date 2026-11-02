@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { AccountButton } from "@/components/auth/AccountButton";
 import { Select } from "@/components/ui/Select";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { CITIES } from "@/lib/taxonomy";
@@ -43,9 +44,10 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
         <span className="hidden min-[360px]:inline">discdeal</span>
       </Link>
 
-      <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-4 ${browsing ? "lg:col-start-3" : ""}`}>
+      <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 ${browsing ? "lg:col-start-3" : ""}`}>
         {!browsing && <span className="hidden text-small text-muted md:block">New deals every day</span>}
         <Select label="Your city" icon="pin" value={city ?? "all"} options={CITY_OPTIONS} onChange={(value) => onCityChange(value === "all" ? null : value)} />
+        <AccountButton />
         <ThemeToggle />
       </div>
 

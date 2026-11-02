@@ -3,13 +3,17 @@
  *   npm run db:test
  * Creates the tables from db/schema.sql, imports data/cards.csv + data/deals.csv, reads them back the way the
  * website does, and checks the result matches reading the spreadsheets directly. Also checks re-imports, removed
- * rows, broken rows and deals that name an unknown card.
+ * rows, broken rows and deals that name an unknown card. Then tests accounts: register, log in by username or email,
+ * passwords, sessions (expiry, log out) and saved likes.
  */
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { csvToCards, recordsToCards } from "@/lib/cards-csv";
 import { csvToDeals, parseCsv, recordsToDeals, todayInPakistan } from "@/lib/deals-csv";
 import { SELECT_CARDS, SELECT_LIVE_DEALS, syncCatalog } from "@/lib/db-sql";
+import { RegisterSchema, normalizePhone } from "@/lib/account";
+import { addLikes, createSession, createUser, deleteSession, findUserForLogin, likedIds, removeLike, userBySession, MAX_LIKES, type Query } from "@/lib/account-sql";
+import { hashPassword, verifyPassword } from "@/lib/server/password";
 
 let failed = 0;
 function check(name: string, ok: boolean, detail = "") {
@@ -70,6 +74,52 @@ check("a broken row stops the whole import and changes nothing", rejected.proble
 const unknownCard = toCsv([header, firstRow.map((c, i) => (header[i] === "card_ids" ? "meezan-debit" : c)), ...rest]);
 const rejectedCard = await sync(cardsCsv, unknownCard);
 check("a deal naming a card that is not in cards.csv is rejected", rejectedCard.problems.length === 1 && rejectedCard.problems[0].includes("meezan-debit"), rejectedCard.problems[0]);
+
+/* ---------------- accounts ---------------- */
+
+const q: Query = async (text, params) => (await db.query(text, params)).rows as never;
+const form = { name: "Ayesha Khan", username: "Ayesha_K", city: "lahore", email: "Ayesha@Example.com", phone: "0300-1234567", password: "chai-2026!", confirmPassword: "chai-2026!" };
+const input = RegisterSchema.parse(form);
+check("register form tidies input (lowercase username/email, +92 phone)", input.username === "ayesha_k" && input.email === "ayesha@example.com" && input.phone === "+923001234567");
+check("phone numbers in every common form are understood", ["03001234567", "+92 300 1234567", "923001234567", "300 1234567"].every((p) => normalizePhone(p) === "+923001234567") && normalizePhone("12345") === null);
+check("register form rejects bad input with a message per field", (() => {
+  const bad = RegisterSchema.safeParse({ ...form, username: "a b", email: "nope", phone: "123", password: "short", confirmPassword: "other", city: "paris" });
+  const fields = new Set(bad.success ? [] : bad.error.issues.map((i) => String(i.path[0])));
+  return ["username", "email", "phone", "password", "city"].every((f) => fields.has(f));
+})());
+check("passwords must match", !RegisterSchema.safeParse({ ...form, confirmPassword: "chai-2027!" }).success);
+
+const hash = await hashPassword(form.password);
+check("password is stored as a hash, never as itself", hash.startsWith("scrypt$") && !hash.includes(form.password));
+check("right password passes, wrong one fails", (await verifyPassword(form.password, hash)) && !(await verifyPassword("chai-2027!", hash)));
+
+const created = await createUser(q, input, hash);
+check("an account is created", created.ok);
+const userId = created.ok ? created.user.id : "0";
+const sameEmail = await createUser(q, { ...input, username: "someone_else" }, hash);
+check("the same email cannot register twice", !sameEmail.ok && sameEmail.field === "email");
+const sameName = await createUser(q, { ...input, email: "other@example.com" }, hash);
+check("the same username cannot register twice", !sameName.ok && sameName.field === "username");
+check("log in finds the account by username or by email", (await findUserForLogin(q, "ayesha_k"))?.id === userId && (await findUserForLogin(q, "ayesha@example.com"))?.id === userId);
+check("an unknown login finds nothing", (await findUserForLogin(q, "nobody")) === null);
+
+await createSession(q, userId, "token-a", new Date(Date.now() + 60_000));
+await createSession(q, userId, "token-old", new Date(Date.now() - 60_000));
+check("a session finds its user", (await userBySession(q, "token-a"))?.username === "ayesha_k");
+check("an expired or unknown session finds nobody", (await userBySession(q, "token-old")) === null && (await userBySession(q, "nope")) === null);
+await deleteSession(q, "token-a");
+check("after log out the session is gone", (await userBySession(q, "token-a")) === null);
+
+const [a, b, c] = fromFile.deals.map((d) => d.id);
+await addLikes(q, userId, [a, b, a]);
+const afterAdd = await addLikes(q, userId, [b, c]);
+check("likes are saved once each, newest first", afterAdd.length === 3 && afterAdd[0] === c && new Set(await likedIds(q, userId)).size === 3);
+await removeLike(q, userId, b);
+check("a like can be removed", !(await likedIds(q, userId)).includes(b));
+const many = await addLikes(q, userId, Array.from({ length: MAX_LIKES + 50 }, (_, i) => 1_000_000 + i));
+check(`at most ${MAX_LIKES} likes per account`, many.length === MAX_LIKES);
+await db.query("delete from users where id = $1", [userId]);
+check("deleting an account deletes its sessions and likes", (await likedIds(q, userId)).length === 0);
 
 console.log(failed === 0 ? "\nAll database checks passed." : `\n${failed} check(s) failed.`);
 process.exitCode = failed === 0 ? 0 : 1;

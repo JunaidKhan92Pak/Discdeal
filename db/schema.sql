@@ -56,3 +56,39 @@ create index if not exists deals_live_idx on deals (is_active, valid_until);
 -- write through them (the website connects with the private database URL from the server, which is not affected).
 alter table deals enable row level security;
 alter table cards enable row level security;
+
+-- Accounts. People register to save ("like") deals. Passwords are never stored, only a scrypt hash
+-- (lib/server/password.ts). username and email are stored lowercase so logging in ignores capitals.
+create table if not exists users (
+  id            bigint generated always as identity primary key,
+  username      text not null unique,                  -- 'junaid_92' (3–20 of a-z 0-9 _ .)
+  name          text not null,                         -- 'Junaid Sultan'
+  city          text not null,                         -- a city id from lib/taxonomy.ts
+  email         text not null unique,
+  phone         text not null,                         -- '+923001234567'
+  password_hash text not null,
+  created_at    timestamptz not null default now()
+);
+
+-- Who is logged in. The browser keeps a random token in a private cookie; only its SHA-256 is stored here,
+-- so a copy of this table cannot be used to log in. Logging out deletes the row.
+create table if not exists sessions (
+  token_hash text primary key,
+  user_id    bigint not null references users (id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists sessions_user_idx on sessions (user_id);
+
+-- Liked deals, per account. deal_id is a deal's stable id (deals.id); no foreign key, so likes survive a deal
+-- being re-imported or ending, and also work when the deals come from the spreadsheet.
+create table if not exists likes (
+  user_id    bigint not null references users (id) on delete cascade,
+  deal_id    bigint not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, deal_id)
+);
+
+alter table users enable row level security;
+alter table sessions enable row level security;
+alter table likes enable row level security;

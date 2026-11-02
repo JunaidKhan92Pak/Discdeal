@@ -23,4 +23,8 @@ export const config = {
   cdnSeconds: seconds("CDN_CACHE_SECONDS", 60),
   /** Requests one visitor may make per minute to the API before getting "slow down" (429). */
   rateLimitPerMinute: seconds("RATE_LIMIT_PER_MINUTE", 120),
+  /** Log in / register attempts one visitor may make per minute (slows down password guessing). */
+  authAttemptsPerMinute: seconds("AUTH_ATTEMPTS_PER_MINUTE", 10),
+  /** How long a login lasts before asking again. */
+  sessionDays: seconds("SESSION_DAYS", 30),
 };

@@ -7,6 +7,7 @@ import { FilterSidebar } from "@/components/deals/FilterSidebar";
 import { IntentChips } from "@/components/deals/IntentChips";
 import { ResultsGrid } from "@/components/deals/ResultsGrid";
 import { ResultsToolbar } from "@/components/deals/ResultsToolbar";
+import { account } from "@/hooks/useAccount";
 import { useBrowseFilters } from "@/hooks/useBrowseFilters";
 import { useDeals } from "@/hooks/useDeals";
 import { useLikedDeals } from "@/hooks/useLikedDeals";
@@ -64,6 +65,12 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
   const parts = page?.intent.parts ?? [];
   const typedCities = parts.filter((p) => p.kind === "city").map((p) => p.key.slice("city:".length) as CityId);
   const searchedCities = typedCities.length > 0 ? typedCities : city ? [city] : [];
+
+  // Saved deals belong to an account: logged out, "Liked" asks to log in first, then shows them.
+  function showLiked() {
+    if (account.user || filters.likedOnly) filters.toggleLiked();
+    else account.ask({ mode: "login", reason: "Log in to see the deals you saved.", then: filters.toggleLiked });
+  }
 
   function removePart(part: IntentPart) {
     setChipRemoved((n) => n + 1);
@@ -132,7 +139,7 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
           brandScope={brandScope}
           onBrand={filters.selectBrand}
           onSort={filters.setSort}
-          onToggleLiked={filters.toggleLiked}
+          onToggleLiked={showLiked}
           myCards={myCards}
           onSaveCards={saveCards}
           banks={meta?.banks ?? null}

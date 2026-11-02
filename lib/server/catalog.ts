@@ -9,31 +9,24 @@
 import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import postgres from "postgres";
 import { csvToCards, recordsToCards, type ParsedCards } from "@/lib/cards-csv";
 import { csvToDeals, recordsToDeals, todayInPakistan, type ParsedDeals } from "@/lib/deals-csv";
 import { SELECT_CARDS, SELECT_LIVE_DEALS } from "@/lib/db-sql";
 import { cached, dataVersion } from "@/lib/server/cache";
 import { config } from "@/lib/server/config";
+import { database } from "@/lib/server/db";
 import { CATEGORIES, CITIES } from "@/lib/taxonomy";
 import type { Bank, Card, CatalogMeta, CityId, Deal } from "@/lib/types";
 
 export type Catalog = { deals: Deal[]; banks: Bank[]; cards: Card[]; meta: CatalogMeta };
 
-let sql: postgres.Sql | null = null;
-
-/* One small connection pool per server. `prepare: false` is required by Supabase's connection pooler. */
-function database(): postgres.Sql {
-  sql ??= postgres(config.databaseUrl, { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 10 });
-  return sql;
-}
-
 const file = (name: string) => readFile(path.join(process.cwd(), "data", name), "utf8");
 
 async function loadCards(): Promise<ParsedCards> {
-  if (!config.databaseUrl) return csvToCards(await file("cards.csv"));
+  const db = database();
+  if (!db) return csvToCards(await file("cards.csv"));
   try {
-    return recordsToCards(await database().unsafe(SELECT_CARDS));
+    return recordsToCards(await db.unsafe(SELECT_CARDS));
   } catch (error) {
     // The `cards` table may not exist yet (schema.sql not re-run): keep working from the spreadsheet.
     if ((error as { code?: string }).code === "42P01") return csvToCards(await file("cards.csv"));
@@ -43,7 +36,8 @@ async function loadCards(): Promise<ParsedCards> {
 
 async function loadDeals(cardIds: ReadonlySet<string>): Promise<ParsedDeals> {
   const today = todayInPakistan();
-  if (config.databaseUrl) return recordsToDeals(await database().unsafe(SELECT_LIVE_DEALS), today, cardIds);
+  const db = database();
+  if (db) return recordsToDeals(await db.unsafe(SELECT_LIVE_DEALS), today, cardIds);
   return csvToDeals(await file("deals.csv"), today, cardIds);
 }
 

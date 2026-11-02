@@ -98,8 +98,8 @@ One row per card; repeat the bank columns for a bank's second card. Then use the
    ```
    npm run db:import
    ```
-   ✔ It should say `Imported 3 cards and 147 deals …`. Refresh the Table Editor in Supabase to see the `cards`
-   and `deals` tables.
+   ✔ It should say `Imported 3 cards and 147 deals …`. Refresh the Table Editor in Supabase to see the `cards`,
+   `deals`, `users`, `sessions` and `likes` tables. (Accounts, for saving liked deals, switch on once these exist.)
    If any row has a problem, nothing is imported and it lists what to fix.
 6. Restart `npm run dev`. The website now reads from the database. (Without `DATABASE_URL` it reads the
    spreadsheet again, so you can always switch back.)
@@ -153,3 +153,6 @@ Every time you push changes to GitHub, Vercel updates the live site automaticall
 - **Legal:** show only facts (discount, cities, dates), link to the source, and do not copy banks' or brands'
   logos or photos without permission.
 - **Privacy:** "My cards" stores only card *names* on the user's own phone. Never ask users for card numbers.
+- **Accounts:** people's names, emails and phone numbers are in the `users` table. Never share or export it, and
+  never put the database password anywhere public. You can see accounts in Supabase → Table Editor → users
+  (passwords there are scrambled hashes, which is correct; nobody can read them, not even you).

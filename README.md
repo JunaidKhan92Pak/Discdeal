@@ -58,7 +58,8 @@ header row (logo · search · city), so the results start high on the screen. Th
    24 load at a time; **Show more deals** loads the next 24.
 
 The 📍 city pill in the navbar is remembered (`localStorage`). A city typed in the search wins over it. Tapping a card
-opens the details: a bottom sheet on phones, a dialog on larger screens. The heart saves a deal to **Liked**.
+opens the details: a bottom sheet on phones, a dialog on larger screens. The heart saves a deal to **Liked** (this needs
+a free account; see "Accounts" below).
 
 ### Categories, types and brands (two directions)
 
@@ -108,13 +109,16 @@ app/
   globals.css            imports Tailwind + the two style files below
   api/deals/route.ts     GET /api/deals: rate limit → validated params → cached search → one page of results
   api/meta/route.ts      GET /api/meta: banks, cards, live counts and example searches (fetched once per visit)
+  api/auth/*/route.ts    POST register · POST login · POST logout · GET me (who is logged in)
+  api/likes/route.ts     the logged-in person's liked deals: GET · POST {ids} · DELETE ?id=
 styles/
   theme.css              DESIGN TOKENS: colours (light/dark), fonts, type scale, radii, widths, shadows, motion
   components.css         shared classes built from the tokens: deal-card, pill, chip, field, badge, media …
 components/
   ui/                    small reusable pieces: Icon, Select (Radix), MagicCard (Magic UI), LikeButton, CopyCodeButton,
                          ThemeToggle
-  layout/                Header (logo, search, city, theme: one row on desktop once browsing)
+  layout/                Header (logo, search, city, account, theme: one row on desktop once browsing)
+  auth/                  AuthDialog (Log in / Create account window), AccountButton (header: Log in, or name + Log out)
   home/                  Hero, SearchBar, QuickSearches (the first screen)
   deals/                 DealsBrowser (composes the rest), IntentChips, FilterSidebar (desktop), CategoryBar (phones),
                          BrandList + BrandPicker, ResultsToolbar, ResultsGrid, DealCard, OfferText, DealModal
@@ -123,10 +127,13 @@ hooks/
   useMeta.ts             fetches /api/meta once per visit, shared by every component
   useBrowseFilters.ts    category / subcategory pill, sort, Liked view
   useSavedCity.ts        the 📍 city, remembered in localStorage
-  useLikedDeals.ts       liked ids in localStorage (external store, synced across tabs)
+  useAccount.ts          who is logged in (asked once per visit), log in / register / log out, "please log in" requests
+  useLikedDeals.ts       the account's liked deals (server), asks to log in first when logged out
   useMyCards.ts          the user's cards (names only) and "only my cards", in localStorage
 lib/
   types.ts               shared types, including the API contract (DealQuery → DealsPage)
+  account.ts             register / log in form rules and messages (used by browser and server)
+  account-sql.ts         the SQL for users, sessions and likes
   taxonomy.ts            cities, categories, subcategories, channels (tied to the search dictionary and icons)
   cards-csv.ts           the banks & cards spreadsheet format
   deals-csv.ts           the deals spreadsheet format: read it, check every row, turn rows into deals
@@ -138,7 +145,10 @@ lib/
   format.ts              price / city / date text
   server/config.ts       every server setting, from environment variables, with defaults
   server/cache.ts        memory + Redis cache, one load per key at a time, data version for instant refresh
-  server/rate-limit.ts   requests per visitor per minute (Redis if set, else per server)
+  server/rate-limit.ts   requests per visitor per minute (Redis if set, else per server); stricter for log in
+  server/db.ts           one Postgres connection pool, shared by the catalog and accounts
+  server/session.ts      log-in sessions in a private cookie; shared start of every account route
+  server/password.ts     password hashing (scrypt, built into Node)
   server/catalog.ts      loads cards + live deals: Postgres if DATABASE_URL is set, else the spreadsheets
   server/search.ts       smart search over the loaded deals: match + rank + relax + facets + pages
 data/
@@ -192,6 +202,26 @@ The deal data never ships to the browser; only one page of results does.
 - **Untrusted input is bounded**: unknown ids are dropped, `limit` ≤ 48, `offset` ≤ 2000, text ≤ 120 characters,
   at most 200 liked ids. Errors return JSON with status 500 and the UI offers "Try again".
 - **Long lists stay smooth**: cards off screen skip layout and paint (`content-visibility: auto`).
+
+## Accounts
+
+People need a free account to save ("like") deals, so their likes are on every phone and computer they log in on.
+Tapping a heart while logged out opens the **Log in / Create account** window with the reason; once they are in,
+the deal they tapped is saved without tapping again. "Liked" works the same way.
+
+- **Register**: full name, username, city, email, mobile number, password and confirm password. **Log in**: username
+  *or* email, and password. Each problem is shown under its field in plain words; the form checks in the browser
+  first (no wait), and the server checks again (`lib/account.ts`, the same rules on both sides). Mobile numbers are
+  understood in any common form (0300 1234567, +92 300 1234567 …) and stored as +923001234567.
+- **Passwords** are never stored, only a scrypt hash with its own salt (`lib/server/password.ts`). A wrong username
+  and a wrong password give the same message and take the same time, so nobody can find out who has an account.
+- **Sessions**: a random token in a cookie page scripts cannot read (HttpOnly, Secure, SameSite=Lax), valid 30 days
+  (`SESSION_DAYS`). The database keeps only the token's SHA-256. Log out deletes it.
+- **Abuse**: 10 log-in / register tries per minute per visitor (`AUTH_ATTEMPTS_PER_MINUTE`); `proxy.ts` accepts
+  account changes only as JSON from a page on this site; at most 500 likes per account.
+- **Needs the database.** Without `DATABASE_URL` the Log in button is hidden and everything else works as before.
+  `npm run db:import` creates the `users`, `sessions` and `likes` tables (see `db/schema.sql`).
+- Not built yet: "forgot password" (needs an email service such as Resend) and verifying email or phone.
 
 ## Smart search
 

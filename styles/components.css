@@ -67,6 +67,20 @@
   }
 }
 
+/* Text boxes in forms (log in, register): tall enough for thumbs, a clear red edge when something needs fixing */
+@utility input {
+  @apply h-12 w-full rounded-button border border-line bg-surface px-3 text-body text-ink transition duration-150 placeholder:text-muted;
+  &:hover {
+    @apply border-muted;
+  }
+  &:focus {
+    @apply border-primary shadow-field-focus outline-none;
+  }
+  &[aria-invalid="true"] {
+    @apply border-urgent;
+  }
+}
+
 /* Small elements */
 
 /* "30% OFF": the discount, in the money colour */

@@ -35,7 +35,9 @@ left out), and when a bank lists two different numbers for one shop, use the low
 - Every deal's details show where it came from, when it was checked, and link to the bank's own offer page.
 - **My cards**: people tick the cards they have (names only, saved on their own phone) and see only the deals
   those cards get. Each deal shows which card pays; deals for your cards say "✓ Your card".
-- To add deals fast, see [docs/ADD-DEALS-WITH-CLAUDE.md](docs/ADD-DEALS-WITH-CLAUDE.md).
+- To add deals fast, see [docs/ADD-DEALS-WITH-CLAUDE.md](docs/ADD-DEALS-WITH-CLAUDE.md) (you have the offer text), or
+  [docs/AI-RESEARCH-PROMPT.md](docs/AI-RESEARCH-PROMPT.md) (a prompt that makes any web-browsing AI find a bank's
+  offers and return `cards-new.csv` + `deals-new.csv`).
 
 ## How the screen works
 
@@ -164,6 +166,7 @@ scripts/
 docs/
   GETTING-STARTED.md     beginner's guide: run, edit deals, Supabase, Vercel, domain
   ADD-DEALS-WITH-CLAUDE.md  a ready prompt to turn bank offer pages/PDFs into spreadsheet rows
+  AI-RESEARCH-PROMPT.md  a prompt for any web-browsing AI to collect one bank's offers as two CSV files
 ```
 
 Data flows one way: `page.tsx` → `DealsBrowser` → `useDeals` → `GET /api/deals` → `lib/server/cache.ts`

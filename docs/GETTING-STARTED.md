@@ -108,9 +108,10 @@ One row per card; repeat the bank columns for a bank's second card. Then use the
 website shows the change within about a minute (within seconds with Redis, Part 3b). You can also edit rows
 directly in Supabase's Table Editor.
 
-**If `npm run db:import` says `CONNECT_TIMEOUT`**, your network (often office or university Wi-Fi) blocks database
-ports 5432/6543. Ordinary websites still open, so it is easy to miss. Either connect to mobile data and run it again,
-or let GitHub do the import (below), which never touches your network.
+**If `npm run db:import` says `CONNECT_TIMEOUT`**, your network (office or university Wi-Fi, or sometimes the internet
+provider) is blocking Supabase's database servers. The Supabase website and dashboard still open, so it is easy to
+miss, and the free plan is not the cause. Either connect to mobile data and run it again, or let GitHub do the import
+(below), which never touches your network.
 
 **Let GitHub import for you (recommended).** `.github/workflows/import-deals.yml` imports the spreadsheets every time
 `data/` changes on GitHub. One-time setup:

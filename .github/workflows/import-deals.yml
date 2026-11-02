@@ -1,5 +1,5 @@
 # Imports data/cards.csv + data/deals.csv into the database every time they change on GitHub.
-# Runs on GitHub's servers, so it works even when your own network blocks database ports.
+# Runs on GitHub's servers, so it works even when your own network blocks the connection to the database.
 #
 # One-time setup (GitHub → this repository → Settings → Secrets and variables → Actions → New repository secret):
 #   DATABASE_URL              same value as in .env.local (required)

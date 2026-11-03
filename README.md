@@ -207,6 +207,26 @@ The deal data never ships to the browser; only one page of results does.
   at most 200 liked ids. Errors return JSON with status 500 and the UI offers "Try again".
 - **Long lists stay smooth**: cards off screen skip layout and paint (`content-visibility: auto`).
 
+## Found by Google and AI assistants (SEO, AEO, GEO)
+
+The search screen loads deals in the browser, which search engines and AI assistants (ChatGPT, Claude, Perplexity,
+Google's AI answers) mostly cannot see. So the same live data is also published as plain, server-built pages:
+
+- **`/deals`** links to every **city, category, bank and brand page** (`/deals/city/lahore`, `/deals/brand/khaadi`,
+  `/deals/bank/hbl`, …; about 190 pages, rebuilt from the data every hour). Each page has a clear title and
+  description, the deals as text (offer, card, cities, end date, source link), **questions and answers written from
+  the data** ("Which bank cards give discounts in Lahore?"), and links to related pages.
+- **Structured data** (schema.org JSON-LD) on every page: WebSite with a search box, Organization, breadcrumbs, the
+  deals as Offers, and FAQPage. **`/about`** explains what DiscDeal is and where data comes from, as FAQ.
+- **`/llms.txt`** and **`/llms-full.txt`**: plain-text guides for AI assistants (llmstxt.org): what the site is, how
+  to link to a search, and every live deal in one sentence with its source.
+- **`robots.txt`** welcomes search engines and AI crawlers by name (only `/api/` is closed), **`sitemap.xml`** lists
+  every page, plus a share image, app manifest and icon.
+- **Shareable searches:** `/?q=pizza+in+Lahore` opens that search directly, and the address bar follows the search.
+- Set `NEXT_PUBLIC_SITE_URL` once you have your own domain; until then the Vercel address is used.
+- **Vercel Analytics and Speed Insights** are in `app/layout.tsx`; switch them on in the Vercel dashboard (project →
+  Analytics → Enable, and Speed Insights → Enable). They collect nothing while developing.
+
 ## Accounts
 
 People need a free account to save ("like") deals, so their likes are on every phone and computer they log in on.

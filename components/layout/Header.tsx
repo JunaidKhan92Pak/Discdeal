@@ -41,7 +41,8 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
         aria-label="DiscDeal home"
       >
         <span className="grid size-8 place-items-center rounded-button bg-primary pb-0.5 font-bold text-on-primary">d</span>
-        <span className="hidden min-[360px]:inline">discdeal</span>
+        {/* The word needs room: on narrow phones the city, account and theme buttons come first. */}
+        <span className="hidden min-[420px]:inline">discdeal</span>
       </Link>
 
       <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 ${browsing ? "lg:col-start-3" : ""}`}>

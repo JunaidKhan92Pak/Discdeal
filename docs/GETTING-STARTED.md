@@ -159,6 +159,18 @@ On Vercel you can instead add Upstash from **Storage / Marketplace**; it sets `K
 
 Every time you push changes to GitHub, Vercel updates the live site automatically.
 
+**See your visitors and speed:** in Vercel open your project → **Analytics** → **Enable**, and **Speed Insights** →
+**Enable** (both have a free tier). Data appears a few minutes after people visit the live site.
+
+**Get found on Google and AI assistants:**
+1. Once you have your own domain, add `NEXT_PUBLIC_SITE_URL` (e.g. `https://discdeal.pk`) in Vercel → Settings →
+   Environment Variables, and redeploy.
+2. Go to https://search.google.com/search-console, add your domain, and submit `https://your-domain/sitemap.xml`.
+   Do the same at https://www.bing.com/webmasters (Bing also feeds ChatGPT search and Copilot).
+3. Check a page with https://search.google.com/test/rich-results (e.g. `/about` should show "FAQ").
+4. Keep deals fresh: AI assistants and Google prefer pages that are updated. The pages rebuild every hour from the
+   database.
+
 ---
 
 ## Checklist before showing it to people

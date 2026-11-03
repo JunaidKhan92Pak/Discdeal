@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TAGLINE, jsonLd, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap" });
@@ -8,10 +11,70 @@ const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["nor
 
 const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}`;
 
+const TITLE = `${SITE_NAME}: discounts and bank-card deals in Pakistan`;
+
 export const metadata: Metadata = {
-  title: "DiscDeal — Find the deal, skip the full price",
-  description: "Smart search for discounts and deals across Pakistan: in English, Roman Urdu or Urdu.",
+  metadataBase: new URL(siteUrl()),
+  title: { default: TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: SITE_KEYWORDS,
+  category: "shopping",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: "en_PK",
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: SITE_DESCRIPTION },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  other: { "geo.region": "PK", "geo.placename": "Pakistan" },
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f6f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#141311" },
+  ],
+};
+
+/** Who we are and how to search us, for search engines and AI assistants (schema.org, read from the page source). */
+function SiteStructuredData() {
+  const url = siteUrl();
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${url}/#website`,
+        name: SITE_NAME,
+        alternateName: SITE_TAGLINE,
+        url,
+        description: SITE_DESCRIPTION,
+        inLanguage: ["en-PK", "ur-PK"],
+        publisher: { "@id": `${url}/#organization` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: { "@type": "EntryPoint", urlTemplate: `${url}/?q={search_term_string}` },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${url}/#organization`,
+        name: SITE_NAME,
+        url,
+        logo: `${url}/icon.svg`,
+        areaServed: { "@type": "Country", name: "Pakistan" },
+        description: SITE_DESCRIPTION,
+      },
+    ],
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(data) }} />;
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -19,9 +82,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         {/* Runs synchronously before first paint so the saved theme never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        <SiteStructuredData />
       </head>
       <body className={`${sans.variable} ${serif.variable} antialiased`}>
         {children}
+        {/* Vercel: visitors and page views, and real-user speed (Core Web Vitals). Both send nothing in development. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

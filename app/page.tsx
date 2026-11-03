@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
+import Link from "next/link";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/home/Hero";
@@ -20,6 +21,23 @@ export default function Home() {
   const [browsing, setBrowsing] = useState(false);
   // Counts Enter presses: each one searches at once instead of waiting for typing to pause.
   const [searchNow, setSearchNow] = useState(0);
+
+  // A shared link like /?q=pizza+lahore opens straight on that search (also how AI assistants and Google's
+  // search box link in). Read once after the page loads, so the prerendered page stays the same for everyone.
+  useEffect(() => {
+    const shared = new URLSearchParams(window.location.search).get("q")?.trim().slice(0, 120);
+    if (!shared) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL after hydration
+    setQuery(shared);
+    setBrowsing(true);
+  }, []);
+
+  // The address bar follows the search, so it can be copied and shared. replaceState: no new history entry per letter.
+  useEffect(() => {
+    const q = query.trim();
+    const next = browsing && q ? `/?${new URLSearchParams({ q })}` : "/";
+    if (window.location.pathname + window.location.search !== next) window.history.replaceState(window.history.state, "", next);
+  }, [query, browsing]);
 
   /**
    * Switches between the search screen and the results; a short cross-fade covers the layout change.
@@ -104,6 +122,14 @@ export default function Home() {
       {/* On phones the footer gives its height to the results while browsing. */}
       <footer className={`shrink-0 justify-center pt-3 text-caption text-muted [@media(max-height:34rem)]:hidden ${browsing ? "hidden sm:flex" : "flex"}`}>
         Prices and offers may change. Please check with the store.
+        <span className="mx-2" aria-hidden="true">·</span>
+        <Link href="/deals" className="hover:text-primary hover:underline">
+          All deals
+        </Link>
+        <span className="mx-2" aria-hidden="true">·</span>
+        <Link href="/about" className="hover:text-primary hover:underline">
+          About
+        </Link>
       </footer>
 
       {/* One log-in window for the whole page; anything that needs an account opens it (see useAccount). */}

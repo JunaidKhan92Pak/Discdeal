@@ -5,17 +5,42 @@
  *   3. the work: runs only on a miss, and only ONCE even if many identical requests arrive together
  *                ("single flight": the others wait for the same promise instead of hitting the database too)
  * Keys include a data version, so importing new deals makes every old answer unreachable at once.
+ * Redis is a speed-up, never a requirement: each call gives up after 1.5 s, and after a failure the site works from
+ * memory alone for a minute (lib/server/health.ts), so a blocked or slow Redis never makes a search wait.
  */
 import "server-only";
 import { Redis } from "@upstash/redis";
 import { config } from "@/lib/server/config";
+import { isUp, markDown } from "@/lib/server/health";
 
-export const redis = config.redisUrl && config.redisToken ? new Redis({ url: config.redisUrl, token: config.redisToken }) : null;
+const REDIS_TIMEOUT_MS = 1500;
+
+export const redis =
+  config.redisUrl && config.redisToken
+    ? new Redis({ url: config.redisUrl, token: config.redisToken, retry: { retries: 0 }, signal: () => AbortSignal.timeout(REDIS_TIMEOUT_MS) })
+    : null;
+
+/** Runs a Redis call, or returns `fallback` when Redis is not set up, paused after a failure, or fails now. */
+export async function withRedis<T>(fallback: T, call: (client: Redis) => Promise<T>): Promise<T> {
+  if (!redis || !isUp("redis")) return fallback;
+  try {
+    return await call(redis);
+  } catch (error) {
+    markDown("redis", error);
+    return fallback;
+  }
+}
 
 const PREFIX = "discdeal:";
 const MEMORY_LIMIT = 500;
-const memory = new Map<string, { value: unknown; expires: number }>();
-const inflight = new Map<string, Promise<{ value: unknown; from: CacheSource }>>();
+// On globalThis: Next.js may load a separate copy of this file for each API route; they should share one cache
+// (so the deals are loaded once per server, not once per route).
+const shared = globalThis as typeof globalThis & {
+  __discdealMemory?: Map<string, { value: unknown; expires: number }>;
+  __discdealInflight?: Map<string, Promise<{ value: unknown; from: CacheSource }>>;
+};
+const memory = (shared.__discdealMemory ??= new Map());
+const inflight = (shared.__discdealInflight ??= new Map());
 
 export type CacheSource = "memory" | "redis" | "fresh";
 
@@ -51,22 +76,16 @@ export async function cached<T>(key: string, seconds: number, load: () => Promis
   if (pending) return pending as Promise<{ value: T; from: CacheSource }>;
 
   const work = (async (): Promise<{ value: unknown; from: CacheSource }> => {
-    if (options.shared && redis) {
-      try {
-        const stored = await redis.get<T>(fullKey);
-        if (stored !== null && stored !== undefined) {
-          remember(fullKey, stored, Math.min(seconds, 15));
-          return { value: stored, from: "redis" };
-        }
-      } catch (error) {
-        console.warn("[cache] Redis read failed, continuing without it:", (error as Error).message);
+    if (options.shared) {
+      const stored = await withRedis<T | null>(null, (client) => client.get<T>(fullKey));
+      if (stored !== null && stored !== undefined) {
+        remember(fullKey, stored, Math.min(seconds, 15));
+        return { value: stored, from: "redis" };
       }
     }
     const value = await load();
     remember(fullKey, value, seconds);
-    if (options.shared && redis) {
-      redis.set(fullKey, value, { ex: seconds }).catch((error: Error) => console.warn("[cache] Redis write failed:", error.message));
-    }
+    if (options.shared) void withRedis(null, (client) => client.set(fullKey, value, { ex: seconds }));
     return { value, from: "fresh" };
   })().finally(() => inflight.delete(fullKey));
 
@@ -82,13 +101,7 @@ const VERSION_KEY = `${PREFIX}data-version`;
  */
 export async function dataVersion(): Promise<string> {
   if (!redis) return "local";
-  const { value } = await cached("version-lookup", 5, async () => {
-    try {
-      return String((await redis!.get<number>(VERSION_KEY)) ?? 0);
-    } catch {
-      return "0";
-    }
-  });
+  const { value } = await cached("version-lookup", 5, async () => String((await withRedis<number | null>(0, (client) => client.get<number>(VERSION_KEY))) ?? 0));
   return value;
 }
 

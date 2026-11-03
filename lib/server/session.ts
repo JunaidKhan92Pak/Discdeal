@@ -61,7 +61,7 @@ export async function accountRoute(request: NextRequest, bucket: Bucket): Promis
     return { error: reply({ error: "Too many tries. Please wait a minute and try again." }, 429, { "Retry-After": String(limit.retryAfterSeconds) }) };
   }
   const query = dbQuery();
-  if (!query) return { error: reply({ error: "Accounts are not switched on yet (no database connected)." }, 503) };
+  if (!query) return { error: reply({ error: "Accounts are not available right now. Please try again in a minute." }, 503) };
   return { query };
 }
 

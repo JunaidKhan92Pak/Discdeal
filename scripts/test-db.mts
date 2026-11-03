@@ -10,7 +10,7 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { csvToCards, recordsToCards } from "@/lib/cards-csv";
 import { csvToDeals, parseCsv, recordsToDeals, todayInPakistan } from "@/lib/deals-csv";
-import { SELECT_CARDS, SELECT_LIVE_DEALS, syncCatalog } from "@/lib/db-sql";
+import { SELECT_CARDS, SELECT_LIVE_DEALS, SYNC_CATALOG_STATEMENT, checkCatalog, syncCatalog, syncStatementParams } from "@/lib/db-sql";
 import { RegisterSchema, normalizePhone } from "@/lib/account";
 import { addLikes, createSession, createUser, deleteSession, findUserForLogin, likedIds, removeLike, userBySession, MAX_LIKES, type Query } from "@/lib/account-sql";
 import { hashPassword, verifyPassword } from "@/lib/server/password";
@@ -74,6 +74,33 @@ check("a broken row stops the whole import and changes nothing", rejected.proble
 const unknownCard = toCsv([header, firstRow.map((c, i) => (header[i] === "card_ids" ? "meezan-debit" : c)), ...rest]);
 const rejectedCard = await sync(cardsCsv, unknownCard);
 check("a deal naming a card that is not in cards.csv is rejected", rejectedCard.problems.length === 1 && rejectedCard.problems[0].includes("meezan-debit"), rejectedCard.problems[0]);
+
+/* ---------------- one-statement import (used over HTTPS when the database port is blocked) ---------------- */
+
+const db2 = new PGlite();
+await db2.exec(await readFile("db/schema.sql", "utf8"));
+const syncOnce = async (cards: string, deals: string) => {
+  const checked = checkCatalog(cards, deals);
+  if (checked.problems.length > 0) return { problems: checked.problems, cards: 0, deals: 0 };
+  const { rows } = await db2.query<{ cards: number; deals: number }>(SYNC_CATALOG_STATEMENT, syncStatementParams(checked));
+  return { problems: [], ...rows[0] };
+};
+const once = await syncOnce(cardsCsv, dealsCsv);
+check("one-statement import writes every card and deal", once.cards === cardsFromFile.cards.length && once.deals === first.deals, `${once.cards} cards, ${once.deals} deals`);
+const live2 = async () => recordsToDeals((await db2.query<Record<string, unknown>>(SELECT_LIVE_DEALS)).rows, today, cardIds).deals;
+const sorted = (list: { id: number }[]) => JSON.stringify([...list].sort((x, y) => x.id - y.id));
+check("one-statement import gives exactly the same deals as the normal import", sorted(await live2()) === sorted(fromDb.deals));
+const cards2 = recordsToCards((await db2.query<Record<string, unknown>>(SELECT_CARDS)).rows);
+check("…and the same banks and cards", byCardId(cards2.cards) === byCardId(cardsFromFile.cards) && byCardId(cards2.banks) === byCardId(cardsFromFile.banks));
+await syncOnce(cardsCsv, dealsCsv);
+check("running it twice changes nothing", (await db2.query<{ n: number }>("select count(*)::int as n from deals")).rows[0].n === first.deals);
+await syncOnce(cardsCsv, toCsv([header, ...rest]));
+check("a row removed from the file stops showing (one statement)", (await live2()).length === fromDb.deals.length - 1);
+const TRICKY = String.raw`It's "50%" off; C:\deals\new, 'quoted' -- not SQL`;
+const tricky = toCsv([header, firstRow.map((c, i) => (header[i] === "description" ? TRICKY : c)), ...rest]);
+await syncOnce(cardsCsv, tricky);
+const trickyRow = (await live2()).find((d) => d.brand === firstRow[0] && d.title === firstRow[3]);
+check("quotes, backslashes and SQL-looking text are stored exactly", trickyRow?.description === TRICKY, trickyRow?.description);
 
 /* ---------------- accounts ---------------- */
 

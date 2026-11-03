@@ -9,7 +9,8 @@ connect a database, put it online).
 ```bash
 npm run dev          # http://localhost:3000
 npm run data:check   # check data/cards.csv + data/deals.csv after editing them
-npm run db:import    # create the tables and copy both spreadsheets into Postgres (needs DATABASE_URL in .env.local)
+npm run db:import    # create the tables and copy both spreadsheets into Postgres (needs DATABASE_URL in .env.local;
+                     # falls back to HTTPS with SUPABASE_ACCESS_TOKEN when the network blocks database ports)
 npm run db:test      # test the database code against a built-in Postgres (no account needed)
 npm run lint
 npm run typecheck

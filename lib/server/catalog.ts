@@ -5,6 +5,8 @@
  * Either way the rows go through the same checks, ended deals are dropped, and the result is kept in memory for
  * CATALOG_CACHE_SECONDS (1 minute by default), so the database is read about once a minute per server however many
  * people visit. Live numbers and example searches are worked out from the data here, so no copy is hard-coded.
+ * If the database cannot be reached, the spreadsheets that ship with the site are used until it is back, so search
+ * keeps working (with the data as of the last commit).
  */
 import "server-only";
 import { readFile } from "node:fs/promises";
@@ -15,6 +17,7 @@ import { SELECT_CARDS, SELECT_LIVE_DEALS } from "@/lib/db-sql";
 import { cached, dataVersion } from "@/lib/server/cache";
 import { config } from "@/lib/server/config";
 import { database } from "@/lib/server/db";
+import { isConnectionError, markDown } from "@/lib/server/health";
 import { CATEGORIES, CITIES } from "@/lib/taxonomy";
 import type { Bank, Card, CatalogMeta, CityId, Deal } from "@/lib/types";
 
@@ -22,8 +25,9 @@ export type Catalog = { deals: Deal[]; banks: Bank[]; cards: Card[]; meta: Catal
 
 const file = (name: string) => readFile(path.join(process.cwd(), "data", name), "utf8");
 
-async function loadCards(): Promise<ParsedCards> {
-  const db = database();
+type Db = ReturnType<typeof database>;
+
+async function loadCards(db: Db): Promise<ParsedCards> {
   if (!db) return csvToCards(await file("cards.csv"));
   try {
     return recordsToCards(await db.unsafe(SELECT_CARDS));
@@ -34,16 +38,25 @@ async function loadCards(): Promise<ParsedCards> {
   }
 }
 
-async function loadDeals(cardIds: ReadonlySet<string>): Promise<ParsedDeals> {
+async function loadDeals(db: Db, cardIds: ReadonlySet<string>): Promise<ParsedDeals> {
   const today = todayInPakistan();
-  const db = database();
   if (db) return recordsToDeals(await db.unsafe(SELECT_LIVE_DEALS), today, cardIds);
   return csvToDeals(await file("deals.csv"), today, cardIds);
 }
 
 async function load(): Promise<Catalog> {
-  const cards = await loadCards();
-  const deals = await loadDeals(new Set(cards.cards.map((c) => c.id)));
+  try {
+    return await loadFrom(database());
+  } catch (error) {
+    if (!isConnectionError(error)) throw error;
+    markDown("database", error);
+    return loadFrom(null);
+  }
+}
+
+async function loadFrom(db: Db): Promise<Catalog> {
+  const cards = await loadCards(db);
+  const deals = await loadDeals(db, new Set(cards.cards.map((c) => c.id)));
   const problems = [...cards.problems.map((p) => `cards: ${p}`), ...deals.problems];
   if (problems.length > 0) console.warn(`[catalog] ${problems.length} row(s) skipped:\n  ${problems.join("\n  ")}`);
   return { deals: deals.deals, banks: cards.banks, cards: cards.cards, meta: buildMeta(deals.deals, cards.banks, cards.cards) };

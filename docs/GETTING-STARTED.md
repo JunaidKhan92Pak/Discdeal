@@ -110,8 +110,14 @@ directly in Supabase's Table Editor.
 
 **If `npm run db:import` says `CONNECT_TIMEOUT`**, your network (office or university Wi-Fi, or sometimes the internet
 provider) is blocking Supabase's database servers. The Supabase website and dashboard still open, so it is easy to
-miss, and the free plan is not the cause. Either connect to mobile data and run it again, or let GitHub do the import
-(below), which never touches your network.
+miss, and the free plan is not the cause. Three ways around it:
+- **Import over HTTPS from this computer.** On supabase.com click your avatar → **Account preferences → Access
+  Tokens → Generate new token**, name it `discdeal-import`, and paste it into `.env.local` as
+  `SUPABASE_ACCESS_TOKEN=sbp_…`. Now `npm run db:import` tries the normal connection for a few seconds and, if it
+  is blocked, says *"importing over HTTPS instead…"* and finishes the same way. The token can manage your whole
+  Supabase account, so never share it; delete it on the same page if it ever leaks.
+- **Mobile data:** connect to your phone's hotspot and run it again.
+- **Let GitHub do it** (below), which never touches your network.
 
 **Let GitHub import for you (recommended).** `.github/workflows/import-deals.yml` imports the spreadsheets every time
 `data/` changes on GitHub. One-time setup:

@@ -9,6 +9,7 @@ import "server-only";
 import { Ratelimit } from "@upstash/ratelimit";
 import { redis } from "@/lib/server/cache";
 import { config } from "@/lib/server/config";
+import { isUp, markDown } from "@/lib/server/health";
 
 export type Bucket = "api" | "auth";
 
@@ -22,8 +23,15 @@ const shared: Record<Bucket, Ratelimit> | null = redis
         prefix: "discdeal:ratelimit",
         // Remembers blocked visitors in memory too, so a flood does not cost a Redis call per request.
         ephemeralCache: new Map(),
+        timeout: 1500,
       }),
-      auth: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(perMinute.auth, "60 s"), prefix: "discdeal:ratelimit:auth", ephemeralCache: new Map() }),
+      auth: new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(perMinute.auth, "60 s"),
+        prefix: "discdeal:ratelimit:auth",
+        ephemeralCache: new Map(),
+        timeout: 1500,
+      }),
     }
   : null;
 
@@ -32,12 +40,16 @@ const local = new Map<string, { count: number; resetAt: number }>();
 export type RateLimitResult = { ok: boolean; retryAfterSeconds: number };
 
 export async function rateLimit(visitor: string, bucket: Bucket = "api"): Promise<RateLimitResult> {
-  if (shared) {
+  // While Redis is paused after a failure, count locally instead of waiting for it.
+  if (shared && isUp("redis")) {
     try {
       const result = await shared[bucket].limit(visitor);
-      return { ok: result.success, retryAfterSeconds: Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) };
+      if (result.reason !== "timeout") {
+        return { ok: result.success, retryAfterSeconds: Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) };
+      }
+      markDown("redis", new Error("rate limit timed out"));
     } catch (error) {
-      console.warn("[rate-limit] Redis unavailable, using the local limit:", (error as Error).message);
+      markDown("redis", error);
     }
   }
   const key = `${bucket}:${visitor}`;

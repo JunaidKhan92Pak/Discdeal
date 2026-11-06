@@ -50,7 +50,8 @@ export function BrandPicker({ brands, selected, scope, onSelect }: BrandPickerPr
             }
           }}
         >
-          <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+          <div className="sheet-handle" aria-hidden="true" />
+          <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-3 sm:pt-5">
             <div>
               <Dialog.Title className="text-title">Choose a brand</Dialog.Title>
               <Dialog.Description className="mt-0.5 text-small text-soft">

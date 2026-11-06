@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { BrandList } from "@/components/deals/BrandList";
 import { Icon } from "@/components/ui/Icon";
 import type { BrandChoice } from "@/hooks/useBrowseFilters";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import { CATEGORIES } from "@/lib/taxonomy";
 import type { BrandFacet, CategoryId } from "@/lib/types";
 
@@ -32,12 +34,17 @@ type FilterSidebarProps = {
 export function FilterSidebar(props: FilterSidebarProps) {
   const { ready, category, sub, allCount, categoryCounts, subCounts, brands, brand, brandScope } = props;
   const visible = ready ? CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || c.id === category) : CATEGORIES;
+  const scrollRef = useRef<HTMLElement>(null);
+  // The whole sidebar scrolls (smoothly) as one: categories, then every brand. No "Show all" button.
+  useSmoothScroll(scrollRef);
 
   return (
     <aside
+      ref={scrollRef}
       aria-label="Filters"
-      className={`min-h-0 flex-col gap-7 overflow-y-auto overscroll-contain pr-2 pb-4 [scrollbar-width:thin] ${props.className ?? ""}`}
+      className={`min-h-0 flex-col overflow-y-auto overscroll-contain pr-2 pb-4 [scrollbar-width:thin] ${props.className ?? ""}`}
     >
+      <div className="flex flex-col gap-7">
       <nav aria-label="Categories">
         <h2 className="eyebrow px-3 pt-1 pb-2">Categories</h2>
         <button type="button" className="list-row" data-quiet aria-pressed={category === null} onClick={() => props.onSelectCategory(null)}>
@@ -64,7 +71,7 @@ export function FilterSidebar(props: FilterSidebarProps) {
               </button>
 
               {subs.length > 1 && (
-                <div className="mb-1 ml-5 animate-fade border-l-2 border-line pl-2">
+                <div className="mb-1 ml-6 animate-fade pl-1">
                   {subs.map((s) => (
                     <button
                       key={s.id}
@@ -91,8 +98,9 @@ export function FilterSidebar(props: FilterSidebarProps) {
           </h2>
           {brandScope && <p className="mt-0.5 text-caption text-muted">with {brandScope} deals</p>}
         </div>
-        <BrandList brands={brands} selected={brand} onSelect={props.onBrand} limit={8} />
+        <BrandList brands={brands} selected={brand} onSelect={props.onBrand} searchBackground="bg-bg/85" />
       </section>
+      </div>
     </aside>
   );
 }

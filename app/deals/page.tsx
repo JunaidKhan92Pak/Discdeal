@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DealRow } from "@/components/site/DealRow";
-import { SectionTitle, SiteShell } from "@/components/site/SiteShell";
+import { PageIntro, SectionTitle, SiteShell } from "@/components/site/SiteShell";
 import { allTopics, headlinePct, topicPath, type Topic, type TopicKind } from "@/lib/deal-pages";
 import { formatDate } from "@/lib/format";
 import { getPagesData } from "@/lib/server/pages-data";
@@ -40,22 +40,21 @@ export default async function DealsIndex() {
   return (
     <SiteShell breadcrumbs={crumbs}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(graph(breadcrumbList(crumbs), pages, offerList("Biggest discounts right now", top, data.cards))) }} />
-      <h1 className="text-headline text-ink">All discounts and deals in Pakistan</h1>
-      <p className="mt-2 max-w-3xl text-body text-soft">
+      <PageIntro title="All discounts and deals in Pakistan">
         {data.deals.length} live offers from {new Set(data.deals.map((d) => d.brandId)).size} brands, updated {formatDate(data.asOf)}: bank-card
         discounts and brand sales, each with its source. Pick a city, category, bank or brand, or{" "}
-        <Link href="/" className="font-semibold text-primary hover:underline">
+        <Link href="/" className="link">
           search in English, Roman Urdu or Urdu
         </Link>
         .
-      </p>
+      </PageIntro>
 
       {SECTIONS.map(({ kind, title }) => (
         <TopicLinks key={kind} title={title} topics={topics.filter((t) => t.kind === kind)} />
       ))}
 
       <SectionTitle>Biggest discounts right now</SectionTitle>
-      <ul>
+      <ul className="grid gap-2.5">
         {top.map((d) => (
           <DealRow key={d.id} deal={d} cards={data.cards} />
         ))}
@@ -69,11 +68,11 @@ function TopicLinks({ title, topics }: { title: string; topics: Topic[] }) {
   return (
     <section>
       <SectionTitle>{title}</SectionTitle>
-      <ul className="flex flex-wrap gap-2">
+      <ul className="flex flex-wrap gap-2" data-reveal>
         {topics.map((t) => (
           <li key={t.path}>
             <Link href={topicPath(t.kind, t.id)} className="pill">
-              {t.name} <span className="text-muted">{t.deals.length}</span>
+              {t.name} <span className="count">{t.deals.length}</span>
             </Link>
           </li>
         ))}

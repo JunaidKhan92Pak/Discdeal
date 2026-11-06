@@ -6,7 +6,10 @@ import { z } from "zod";
 import { CITIES } from "@/lib/taxonomy";
 import type { CityId } from "@/lib/types";
 
-/** What the browser may know about the logged-in person (never the password hash or phone). */
+/**
+ * What the browser may know about the logged-in person (never the password hash or phone).
+ * `username` is an internal id made from the email when the account is created; people never see or type it.
+ */
 export type PublicUser = { name: string; username: string; city: CityId; email: string };
 
 export const PASSWORD_MIN = 8;
@@ -26,13 +29,6 @@ const cityIds = CITIES.map((c) => c.id) as [CityId, ...CityId[]];
 export const RegisterSchema = z
   .object({
     name: z.string().trim().min(2, "Please write your name.").max(60, "Name is too long (60 letters at most)."),
-    username: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .min(3, "Username needs at least 3 letters.")
-      .max(20, "Username can be 20 letters at most.")
-      .regex(/^[a-z0-9_.]+$/, "Use only English letters, numbers, _ or . (no spaces)."),
     city: z.enum(cityIds, "Please choose your city."),
     email: z.string().trim().toLowerCase().max(120, "Email is too long.").pipe(z.email("Please check the email address.")),
     phone: z
@@ -58,7 +54,8 @@ export const RegisterSchema = z
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 
 export const LoginSchema = z.object({
-  login: z.string().trim().toLowerCase().min(3, "Write your username or email.").max(120, "That is too long."),
+  // People log in with their email. Accounts made before usernames were dropped can still use their username.
+  login: z.string().trim().toLowerCase().min(3, "Write your email.").max(120, "That is too long."),
   password: z.string().min(1, "Write your password.").max(72, "Password is too long."),
 });
 

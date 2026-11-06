@@ -10,44 +10,31 @@ type BrandListProps = {
   brands: BrandFacet[];
   selected: BrandChoice | null;
   onSelect: (brand: BrandChoice | null) => void;
-  /** Show only the biggest N brands until "Show all" is pressed (sidebar). Omit to list every brand (sheet). */
-  limit?: number;
+  /** Background of the search box while it sticks to the top of the scrolling list (match what is behind it). */
+  searchBackground?: string;
 };
 
 /**
- * Pick-one list of brands: "All brands", then one row per brand with its count, and a search box when the
- * list is long. Used in the desktop sidebar (top brands + "Show all") and in the phone sheet (everything, A–Z).
+ * Pick-one list of brands: "All brands", then every brand A–Z with its count. No "Show all" button: the list
+ * scrolls (in the sidebar, or the phone sheet), and when it is long a search box stays pinned at its top.
  */
-export function BrandList({ brands, selected, onSelect, limit }: BrandListProps) {
+export function BrandList({ brands, selected, onSelect, searchBackground = "bg-glass-strong" }: BrandListProps) {
   const inputId = useId();
   const [filter, setFilter] = useState("");
-  const [expanded, setExpanded] = useState(false);
 
-  // After a pick, fold the list back so the chosen brand sits near the top where it can be seen.
   function choose(brand: BrandChoice | null) {
     setFilter("");
-    setExpanded(false);
     onSelect(brand);
   }
 
   const needle = filter.trim().toLowerCase();
   const total = brands.reduce((sum, b) => sum + b.count, 0);
-  const collapsible = limit !== undefined && brands.length > limit;
-
-  let shown = brands;
-  if (needle) {
-    shown = brands.filter((b) => b.name.toLowerCase().includes(needle));
-  } else if (collapsible && !expanded) {
-    // Biggest brands first while collapsed; the chosen brand goes to the top so it is always seen.
-    const top = [...brands].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, limit);
-    const chosen = selected ? brands.find((b) => b.id === selected.id) : undefined;
-    shown = chosen ? [chosen, ...top.filter((b) => b.id !== chosen.id)] : top;
-  }
+  const shown = needle ? brands.filter((b) => b.name.toLowerCase().includes(needle)) : brands;
 
   return (
     <div>
-      {brands.length > (limit ?? 6) && (
-        <div className="px-1 pb-2">
+      {brands.length > 6 && (
+        <div className={`sticky top-0 z-10 -mx-1 px-2 pt-1 pb-2 backdrop-blur-xl ${searchBackground}`}>
           <label htmlFor={inputId} className="sr-only">
             Find a brand
           </label>
@@ -58,11 +45,16 @@ export function BrandList({ brands, selected, onSelect, limit }: BrandListProps)
               type="search"
               autoComplete="off"
               dir="auto"
-              placeholder="Find a brand"
+              placeholder={`Find a brand (${brands.length})`}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-muted"
             />
+            {filter && (
+              <button type="button" aria-label="Clear brand search" onClick={() => setFilter("")} className="-mr-2 grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-ink">
+                <Icon name="close" className="size-4" />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -88,18 +80,6 @@ export function BrandList({ brands, selected, onSelect, limit }: BrandListProps)
       ))}
 
       {needle && shown.length === 0 && <p className="px-3 py-4 text-center text-body text-soft">No brand called “{filter.trim()}” here.</p>}
-
-      {collapsible && !needle && (
-        <button
-          type="button"
-          onClick={() => setExpanded((open) => !open)}
-          aria-expanded={expanded}
-          className="mt-1 inline-flex min-h-tap items-center gap-1 rounded-button px-3 text-small font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          {expanded ? "Show fewer brands" : `Show all ${brands.length} brands`}
-          <Icon name="chevron-down" className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        </button>
-      )}
     </div>
   );
 }

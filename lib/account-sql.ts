@@ -19,37 +19,42 @@ export function publicUser(row: UserRow): PublicUser {
   return { name: row.name, username: row.username, city: row.city as CityId, email: row.email };
 }
 
-export type CreateUserResult = { ok: true; user: UserRow } | { ok: false; field: "username" | "email"; message: string };
+export type CreateUserResult = { ok: true; user: UserRow } | { ok: false; field: "email"; message: string };
 
-/** Creates the account. A taken username or email is reported on that field (checked again by the unique index). */
-export async function createUser(query: Query, input: RegisterInput, passwordHash: string): Promise<CreateUserResult> {
-  const taken = await query<{ username: string; email: string }>(`select username, email from users where username = $1 or email = $2`, [
-    input.username,
-    input.email,
-  ]);
-  const conflict = conflictOf(taken, input);
-  if (conflict) return conflict;
-  try {
-    const [user] = await query<UserRow>(
-      `insert into users (username, name, city, email, phone, password_hash) values ($1, $2, $3, $4, $5, $6) returning ${USER_COLUMNS}`,
-      [input.username, input.name, input.city, input.email, input.phone, passwordHash],
-    );
-    return { ok: true, user };
-  } catch (error) {
-    // Two people registering the same name at the same moment: the unique index decides.
-    if ((error as { code?: string }).code !== "23505") throw error;
-    const again = await query<{ username: string; email: string }>(`select username, email from users where username = $1 or email = $2`, [
-      input.username,
-      input.email,
-    ]);
-    return conflictOf(again, input) ?? { ok: false, field: "username", message: "This username is already taken." };
-  }
+const EMAIL_TAKEN: CreateUserResult = { ok: false, field: "email", message: "This email already has an account. Please log in." };
+
+/**
+ * The internal username for a new account, from the email: "Ayesha.K@mail.com" → "ayesha.k" (a-z 0-9 _ . only,
+ * 3–14 letters). If it is taken, 4 random digits are added: "ayesha.k4821". Never shown; people log in by email.
+ */
+export function usernameFor(email: string, attempt: number): string {
+  const local = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_.]/g, "").slice(0, 14);
+  const base = local.length >= 3 ? local : `user${local}`;
+  return attempt === 0 ? base : `${base}${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-function conflictOf(rows: { username: string; email: string }[], input: RegisterInput): CreateUserResult | null {
-  if (rows.some((r) => r.email === input.email)) return { ok: false, field: "email", message: "This email already has an account. Please log in." };
-  if (rows.some((r) => r.username === input.username)) return { ok: false, field: "username", message: "This username is already taken. Try another." };
-  return null;
+/** Creates the account with a free internal username. A taken email is reported on that field (checked again by the unique index). */
+export async function createUser(query: Query, input: RegisterInput, passwordHash: string): Promise<CreateUserResult> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const username = usernameFor(input.email, attempt);
+    const taken = await query<{ username: string; email: string }>(`select username, email from users where username = $1 or email = $2`, [
+      username,
+      input.email,
+    ]);
+    if (taken.some((r) => r.email === input.email)) return EMAIL_TAKEN;
+    if (taken.length > 0) continue; // that username is in use: try one with digits
+    try {
+      const [user] = await query<UserRow>(
+        `insert into users (username, name, city, email, phone, password_hash) values ($1, $2, $3, $4, $5, $6) returning ${USER_COLUMNS}`,
+        [username, input.name, input.city, input.email, input.phone, passwordHash],
+      );
+      return { ok: true, user };
+    } catch (error) {
+      // Two people registering at the same moment: the unique index decides. The next loop sees who won.
+      if ((error as { code?: string }).code !== "23505") throw error;
+    }
+  }
+  throw new Error("Could not find a free username for a new account");
 }
 
 /** The account for "username or email" (already lowercased), with its password hash for checking. */

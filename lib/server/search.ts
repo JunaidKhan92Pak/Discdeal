@@ -179,14 +179,18 @@ export function searchDeals(query: DealQuery, catalog: Catalog): DealsPage {
   filtered.sort(SORTERS[query.sort]);
 
   const end = query.offset + query.limit;
+  // Later pages (infinite scroll) only add deals: the counts and brand list are the same as on the first page, which
+  // the browser keeps, so they are not sent again. That makes each scroll page about half the size.
+  const first = query.offset === 0;
   return {
-    results: filtered.slice(query.offset, end).map((m) => m.deal),
+    // Search words (tags) stay on the server: the browser never shows them.
+    results: filtered.slice(query.offset, end).map(({ deal }) => ({ ...deal, tags: [] })),
     total: filtered.length,
     nextOffset: end < filtered.length ? end : null,
-    categoryCounts,
-    subCounts,
-    allCount,
-    brands: [...brandFacets.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    categoryCounts: first ? categoryCounts : {},
+    subCounts: first ? subCounts : {},
+    allCount: first ? allCount : 0,
+    brands: first ? [...brandFacets.values()].sort((a, b) => a.name.localeCompare(b.name)) : [],
     intent: { parts: parsed.parts, notice },
   };
 }

@@ -11,7 +11,7 @@ export function ThemeToggle() {
     const apply = () => root.classList.toggle("dark", next);
 
     // A view transition cross-fades one snapshot of the page, so it costs the same with 5 deals or 500
-    // (no per-element transitions) and the card gradients, which can't transition, fade like everything else.
+    // (no per-element transitions) and colours that cannot transition (translucent glass) fade like everything else.
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (document.startViewTransition && !reduceMotion) document.startViewTransition(apply);
     else apply();
@@ -24,7 +24,7 @@ export function ThemeToggle() {
   // Both icons are always rendered; CSS (the `dark` class) decides which one shows,
   // so there is no state, no hydration mismatch and no icon flicker on load.
   return (
-    <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn border border-line bg-surface text-ink">
+    <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn bg-fill text-ink">
       <Icon name="sun" className="hidden size-5 dark:block" />
       <Icon name="moon" className="size-5 dark:hidden" />
     </button>

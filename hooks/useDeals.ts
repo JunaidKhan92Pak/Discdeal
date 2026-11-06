@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { dataSaver } from "@/lib/network";
 import { PAGE_SIZE, toSearchParams } from "@/lib/query";
 import type { DealQuery, Deal, DealsPage } from "@/lib/types";
 
@@ -39,8 +40,16 @@ function fetchPage(url: string): Promise<DealsPage> {
   return request;
 }
 
+/** Deals per request: the usual page, or half of it when the person is saving data (decided once per visit). */
+let pageSize: number | undefined;
+function limit(): number {
+  if (typeof window === "undefined") return PAGE_SIZE;
+  pageSize ??= dataSaver() ? Math.ceil(PAGE_SIZE / 2) : PAGE_SIZE;
+  return pageSize;
+}
+
 function urlFor(filters: Filters, offset: number): string {
-  return `/api/deals?${toSearchParams({ ...filters, offset, limit: PAGE_SIZE })}`;
+  return `/api/deals?${toSearchParams({ ...filters, offset, limit: limit() })}`;
 }
 
 /** `value`, but only after it stopped changing for `delay` ms. A new `now` value skips the wait. */
@@ -106,7 +115,9 @@ export function useDeals(input: Filters, searchNow?: number) {
         setLoaded((prev) => {
           if (prev?.key !== key) return prev;
           const seen = new Set(prev.items.map((d) => d.id));
-          return { ...prev, items: [...prev.items, ...page.results.filter((d) => !seen.has(d.id))], page, loadingMore: false };
+          // Later pages carry only deals (the server leaves out counts and brands), so keep the first page's.
+          const merged = prev.page ? { ...prev.page, total: page.total, nextOffset: page.nextOffset } : page;
+          return { ...prev, items: [...prev.items, ...page.results.filter((d) => !seen.has(d.id))], page: merged, loadingMore: false };
         }),
       )
       .catch(() => setLoaded((prev) => (prev?.key === key ? { ...prev, loadingMore: false, moreFailed: true } : prev)));

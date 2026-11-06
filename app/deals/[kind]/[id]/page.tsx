@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DealRow } from "@/components/site/DealRow";
-import { SectionTitle, SiteShell } from "@/components/site/SiteShell";
+import { FaqList, PageIntro, SectionTitle, SiteShell } from "@/components/site/SiteShell";
 import { allTopics, topic, topicFaq, topicPath, topicSummary as summary } from "@/lib/deal-pages";
 import { formatDate, formatOffer } from "@/lib/format";
 import { getPagesData } from "@/lib/server/pages-data";
@@ -58,18 +58,17 @@ export default async function TopicPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd(graph(breadcrumbList(crumbs), offerList(t.heading, t.deals, data.cards), faqPage(faq))) }}
       />
-      <h1 className="text-headline text-ink">{t.heading}</h1>
-      <p className="mt-2 max-w-3xl text-body text-soft">
+      <PageIntro title={t.heading}>
         {summary(t).charAt(0).toUpperCase() + summary(t).slice(1)}, updated {formatDate(data.asOf)}. Each deal shows how much you save, which
         bank card it needs (if any), where it works and until when, with a link to the bank&apos;s or brand&apos;s own page.{" "}
-        <Link href={`/?q=${encodeURIComponent(t.name)}`} className="font-semibold text-primary hover:underline">
+        <Link href={`/?q=${encodeURIComponent(t.name)}`} className="link">
           Search {t.name} deals
         </Link>{" "}
         to filter by your city or card.
-      </p>
+      </PageIntro>
 
       <SectionTitle>{t.kind === "city" ? `Deals at shops in ${t.name}` : "Current deals"}</SectionTitle>
-      <ul>
+      <ul className="grid gap-2.5">
         {local.map((d) => (
           <DealRow key={d.id} deal={d} cards={data.cards} linkBrand={t.kind !== "brand"} />
         ))}
@@ -78,7 +77,7 @@ export default async function TopicPage({ params }: Props) {
       {everywhere.length > 0 && (
         <>
           <SectionTitle>Also valid in {t.name}: nationwide and online deals</SectionTitle>
-          <ul>
+          <ul className="grid gap-2.5">
             {everywhere.map((d) => (
               <DealRow key={d.id} deal={d} cards={data.cards} />
             ))}
@@ -87,23 +86,16 @@ export default async function TopicPage({ params }: Props) {
       )}
 
       <SectionTitle id="faq">Questions and answers</SectionTitle>
-      <dl className="space-y-4">
-        {faq.map((f) => (
-          <div key={f.question}>
-            <dt className="text-body font-semibold text-ink">{f.question}</dt>
-            <dd className="mt-1 text-body text-soft">{f.answer}</dd>
-          </div>
-        ))}
-      </dl>
+      <FaqList items={faq} />
 
       {related.length > 0 && (
         <>
           <SectionTitle>More {KIND_LABEL[t.kind].toLowerCase()}</SectionTitle>
-          <ul className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2" data-reveal>
             {related.map((o) => (
               <li key={o.path}>
                 <Link href={topicPath(o.kind, o.id)} className="pill">
-                  {o.name} <span className="text-muted">{o.deals.length}</span>
+                  {o.name} <span className="count">{o.deals.length}</span>
                 </Link>
               </li>
             ))}

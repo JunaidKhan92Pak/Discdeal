@@ -4,7 +4,7 @@ import { createUser, publicUser } from "@/lib/account-sql";
 import { hashPassword } from "@/lib/server/password";
 import { accountRoute, PRIVATE, readJson, reply, startSession } from "@/lib/server/session";
 
-/** POST /api/auth/register {name, username, city, email, phone, password, confirmPassword} → logged in. */
+/** POST /api/auth/register {name, city, email, phone, password, confirmPassword} → logged in. */
 export async function POST(request: NextRequest) {
   const route = await accountRoute(request, "auth");
   if ("error" in route) return route.error;

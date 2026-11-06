@@ -61,7 +61,7 @@ alter table cards enable row level security;
 -- (lib/server/password.ts). username and email are stored lowercase so logging in ignores capitals.
 create table if not exists users (
   id            bigint generated always as identity primary key,
-  username      text not null unique,                  -- 'junaid_92' (3–20 of a-z 0-9 _ .)
+  username      text not null unique,                  -- internal id made from the email, 'junaid.92' (never shown; log in is by email)
   name          text not null,                         -- 'Junaid Sultan'
   city          text not null,                         -- a city id from lib/taxonomy.ts
   email         text not null unique,

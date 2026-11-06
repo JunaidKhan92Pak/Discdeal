@@ -4,7 +4,7 @@ import { findUserForLogin, publicUser } from "@/lib/account-sql";
 import { DUMMY_HASH, verifyPassword } from "@/lib/server/password";
 import { accountRoute, PRIVATE, readJson, reply, startSession } from "@/lib/server/session";
 
-/** POST /api/auth/login {login: username or email, password} → logged in. */
+/** POST /api/auth/login {login: email (or the username of an older account), password} → logged in. */
 export async function POST(request: NextRequest) {
   const route = await accountRoute(request, "auth");
   if ("error" in route) return route.error;
@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     const user = await findUserForLogin(route.query, parsed.data.login);
     // Always check a password (a dummy one if there is no such user), so both cases take the same time.
     const ok = await verifyPassword(parsed.data.password, user?.password_hash ?? DUMMY_HASH);
-    // One message for both, so nobody can find out which usernames exist.
-    if (!user || !ok) return reply({ error: "Username/email or password is not right. Please check and try again." }, 401);
+    // One message for both, so nobody can find out which emails have an account.
+    if (!user || !ok) return reply({ error: "Email or password is not right. Please check and try again." }, 401);
     const response = NextResponse.json({ user: publicUser(user) }, { headers: PRIVATE });
     await startSession(route.query, response, user.id);
     return response;

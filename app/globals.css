@@ -3,13 +3,37 @@
 @import "../styles/components.css";
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     @apply bg-bg font-sans text-body text-ink antialiased;
+    text-rendering: optimizeLegibility;
   }
+
+  ::selection {
+    @apply bg-primary text-on-primary;
+  }
+
+  /* Thin, quiet scrollbars that match the theme */
+  * {
+    scrollbar-color: var(--c-hover) transparent;
+  }
+}
+
+/*
+ * Entrance animations (GSAP / anime.js). The inline script in app/layout.tsx adds `motion-ok` to <html> before first
+ * paint, unless the person asked for reduced motion, so these elements start hidden and are revealed by script with no
+ * flash. If the scripts have not taken over after a few seconds, that script adds `motion-fallback` and everything
+ * shows anyway: an animation is decoration, the content is not.
+ */
+.motion-ok [data-hero],
+.motion-ok [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.motion-fallback [data-hero],
+.motion-fallback [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 /* People who turn on "reduce motion" (common with vertigo or migraines) get no animations at all. */
@@ -27,5 +51,5 @@
 /* Theme switch cross-fade (see ThemeToggle): a quick fade of the whole page snapshot. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.25s;
+  animation-duration: 0.3s;
 }

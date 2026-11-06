@@ -16,7 +16,7 @@ type CategoryBarProps = {
 };
 
 const ROW =
-  "-mx-gutter flex gap-2 overflow-x-auto px-gutter py-1 [mask-image:linear-gradient(to_right,black_90%,transparent)] [scrollbar-width:none] sm:mx-0 sm:px-0.5 lg:[mask-image:none]";
+  "-mx-gutter flex gap-2 overflow-x-auto px-gutter py-1 [scrollbar-width:none] sm:mx-0 sm:px-0.5";
 
 /**
  * Categories as one row of Radix toggle pills (one tap filters; arrow keys move between them).

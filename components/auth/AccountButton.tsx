@@ -29,11 +29,10 @@ export function AccountButton() {
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content align="end" sideOffset={6} className="menu animate-pop min-w-56">
-          <div className="px-3 py-2">
+          <div className="mb-1 rounded-panel bg-fill px-4 py-3">
             <p className="truncate text-body font-semibold text-ink">{user.name}</p>
-            <p className="truncate text-small text-muted">@{user.username}</p>
+            <p className="truncate text-small text-muted">{user.email}</p>
           </div>
-          <DropdownMenu.Separator className="my-1 h-px bg-line-soft" />
           <DropdownMenu.Item className="menu-item" onSelect={() => void account.logout()}>
             <Icon name="logout" className="size-5" />
             Log out

@@ -1,51 +1,61 @@
 /*
  * DESIGN TOKENS — single source of truth for the look of DiscDeal.
  * Change a value here and the whole app follows. Components never use raw
- * colours, sizes or shadows; they use the names defined below.
+ * colours, sizes or radii; they use the names defined below.
+ *
+ * The look is "flat and tonal": no borders, no drop shadows, no gradients. Layers are told apart by tone
+ * (page → surface → fill) and, where something floats over content (header, dialogs, menus, buttons on photos),
+ * by frosted glass (a translucent tone + backdrop blur).
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------- 1. Palette (switches between light and dark) ----------
- * "Clear": calm and easy to read for everyone, students to grandparents. Only 4 colours:
+ * Calm and easy to read for everyone, students to grandparents. Only 4 colours:
  *   neutrals (warm white + near-black) = almost everything
  *   primary (blue)  = actions, links, "selected"
  *   save    (green) = money saved: "You save Rs …" and the "30% OFF" tag
  *   urgent  (amber) = time running out: "Ends tonight / tomorrow" (always with a clock icon, never colour alone)
+ * Fills are translucent ink, so a pill reads the same on the page, on a card or on glass.
  * All text colours pass WCAG AA (4.5:1) on bg and surface in both modes; most pass AAA (7:1).
  */
 :root {
-  --c-bg: #f7f6f3;
+  --c-bg: #f3f2ee;
   --c-surface: #ffffff;
-  --c-hover: #f0eee9;
-  --c-panel: #f2f0eb;
+  --c-panel: #ebe9e3;
+  --c-fill: rgb(28 27 25 / 0.055);
+  --c-hover: rgb(28 27 25 / 0.095);
+  --c-raised: #ffffff;
+  --c-glass: rgb(255 255 255 / 0.72);
+  --c-glass-strong: rgb(250 249 246 / 0.86);
+  --c-scrim: rgb(24 22 18 / 0.28);
   --c-ink: #1c1b19;
-  --c-soft: #48453f;
-  --c-muted: #67635b;
-  --c-line: #dfdbd3;
-  --c-line-soft: #ebe8e2;
+  --c-soft: #46433d;
+  --c-muted: #66625a;
   --c-primary: #1d4ed8;
   --c-primary-strong: #1e40af;
   --c-on-primary: #ffffff;
-  --c-primary-soft: #eaf0fe;
+  --c-primary-soft: #e6edfd;
   --c-save: #166534;
-  --c-save-soft: #e9f6ee;
+  --c-save-soft: #e3f3e9;
   --c-urgent: #92400e;
-  --c-focus: 29 78 216; /* r g b of the focus ring */
-  --c-shadow: 28 25 20; /* r g b of shadow tint */
+  --c-urgent-soft: #fbeedd;
   color-scheme: light;
 }
 
 .dark {
-  --c-bg: #141311;
-  --c-surface: #1d1c1a;
-  --c-hover: #272522;
-  --c-panel: #191816;
+  --c-bg: #121110;
+  --c-surface: #1c1b19;
+  --c-panel: #262522;
+  --c-fill: rgb(243 241 236 / 0.07);
+  --c-hover: rgb(243 241 236 / 0.12);
+  --c-raised: rgb(243 241 236 / 0.12);
+  --c-glass: rgb(28 27 25 / 0.7);
+  --c-glass-strong: rgb(36 35 32 / 0.86);
+  --c-scrim: rgb(0 0 0 / 0.5);
   --c-ink: #f3f1ec;
   --c-soft: #d0cbc1;
   --c-muted: #a5a097;
-  --c-line: #3a3732;
-  --c-line-soft: #2b2926;
   --c-primary: #8ab4ff;
   --c-primary-strong: #b3ceff;
   --c-on-primary: #0b1838;
@@ -53,23 +63,25 @@
   --c-save: #6dd498;
   --c-save-soft: #16301f;
   --c-urgent: #f4a94f;
-  --c-focus: 138 180 255;
-  --c-shadow: 0 0 0;
+  --c-urgent-soft: #33240f;
   color-scheme: dark;
 }
 
 /* ---------- 2. Tailwind theme (what utilities are generated from) ---------- */
 @theme inline {
-  /* Neutrals: bg-bg, bg-surface, text-ink, text-soft, text-muted, border-line … */
+  /* Neutrals: bg-bg, bg-surface, bg-fill, bg-hover, bg-glass, text-ink, text-soft, text-muted … */
   --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
-  --color-hover: var(--c-hover);
   --color-panel: var(--c-panel);
+  --color-fill: var(--c-fill);
+  --color-hover: var(--c-hover);
+  --color-raised: var(--c-raised);
+  --color-glass: var(--c-glass);
+  --color-glass-strong: var(--c-glass-strong);
+  --color-scrim: var(--c-scrim);
   --color-ink: var(--c-ink);
   --color-soft: var(--c-soft);
   --color-muted: var(--c-muted);
-  --color-line: var(--c-line);
-  --color-line-soft: var(--c-line-soft);
 
   /* Meaning colours: bg-primary, text-primary, text-save, bg-save-soft, text-urgent … */
   --color-primary: var(--c-primary);
@@ -79,22 +91,23 @@
   --color-save: var(--c-save);
   --color-save-soft: var(--c-save-soft);
   --color-urgent: var(--c-urgent);
-  --color-scrim: rgb(0 0 0 / 0.5);
-
-  /* Names Magic UI components expect */
-  --color-background: var(--c-surface);
-  --color-border: var(--c-line);
+  --color-urgent-soft: var(--c-urgent-soft);
 
   /* Fonts: font-sans, font-serif */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument), Georgia, serif;
 
   /* Type scale, sized for older eyes too: body is 16px, the smallest text is 13px.
-     text-display, text-title, text-headline, text-offer, text-price, text-body, text-small, text-caption, text-overline */
+     text-display, text-page, text-title, text-headline, text-offer, text-price, text-body, text-small, text-caption, text-overline */
   --text-display: clamp(2.5rem, min(10vw, 14svh), 6.5rem);
   --text-display--line-height: 0.95;
   --text-display--letter-spacing: -0.04em;
   --text-display--font-weight: 600;
+  /* The one heading of a readable page (/deals, /about) */
+  --text-page: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  --text-page--line-height: 1.05;
+  --text-page--letter-spacing: -0.03em;
+  --text-page--font-weight: 700;
   --text-title: 1.25rem;
   --text-title--line-height: 1.25;
   --text-title--letter-spacing: -0.01em;
@@ -121,11 +134,13 @@
   --text-overline--line-height: 1.4;
   --text-overline--letter-spacing: 0.08em;
 
-  /* Radius: rounded-field, rounded-card, rounded-chip, rounded-button */
-  --radius-field: 0.875rem;
-  --radius-card: 1rem;
-  --radius-chip: 0.5rem;
-  --radius-button: 0.75rem;
+  /* Radius: everything you tap is a pill; containers are softly rounded.
+     rounded-field, rounded-button, rounded-chip = pill · rounded-card = cards and dialogs · rounded-panel = boxes inside them */
+  --radius-field: 9999px;
+  --radius-button: 9999px;
+  --radius-chip: 9999px;
+  --radius-card: 1.5rem;
+  --radius-panel: 1.125rem;
 
   /* Layout widths: max-w-hero, max-w-search, max-w-content, max-w-copy */
   --container-hero: 72rem;
@@ -139,33 +154,44 @@
   /* Smallest comfortable tap target (WCAG AAA target size): h-tap, size-tap */
   --spacing-tap: 2.75rem;
 
-  /* Shadows: soft and quiet; they separate layers, they do not decorate */
-  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06);
-  --shadow-card: 0 1px 3px rgb(var(--c-shadow) / 0.07);
-  --shadow-card-hover: 0 8px 24px rgb(var(--c-shadow) / 0.1);
-  --shadow-field: 0 2px 10px rgb(var(--c-shadow) / 0.06);
-  --shadow-field-focus: 0 0 0 4px rgb(var(--c-focus) / 0.25);
-  --shadow-menu: 0 12px 32px rgb(var(--c-shadow) / 0.16);
-
-  /* Motion: short and small; switched off for people who ask for reduced motion (globals.css) */
-  --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Motion: every transition is 300 ms on one smooth curve; switched off for people who ask for reduced motion (globals.css) */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 300ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   /* `backwards`, not `both`: a lingering transform would trap position:fixed modals/sheets inside their parent */
-  --animate-rise: rise 0.35s var(--ease-smooth) backwards;
-  --animate-fade: fade 0.2s ease backwards;
-  --animate-pop: pop 0.25s var(--ease-smooth) backwards;
+  --animate-rise: rise 0.3s var(--ease-smooth) backwards;
+  --animate-fade: fade 0.3s ease backwards;
+  --animate-pop: pop 0.3s var(--ease-smooth) backwards;
 
   @keyframes fade {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
+  @keyframes fade-out {
+    to { opacity: 0; }
+  }
+
   @keyframes pop {
-    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
+  @keyframes pop-out {
+    to { opacity: 0; transform: translateY(10px) scale(0.97); }
+  }
+
+  @keyframes sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes sheet-down {
+    to { transform: translateY(100%); }
+  }
+
   @keyframes rise {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
 }

@@ -1,7 +1,8 @@
 /*
  * SHARED UI PIECES — built only from tokens in theme.css.
  * Use these class names in components instead of long utility strings.
- * Everything you can tap is at least 44px tall (h-tap) so it is easy to hit, also for older hands.
+ * Everything you can tap is a pill and at least 44px tall (h-tap) so it is easy to hit, also for older hands.
+ * No borders, shadows or gradients: state is shown by tone (fill → hover → selected) and focus by an outline.
  */
 
 /* Typography */
@@ -18,66 +19,115 @@
 }
 
 @utility motion-layout {
-  @apply duration-500 ease-smooth;
+  @apply duration-300 ease-smooth;
+}
+
+/* Keyboard focus, the same everywhere: a clear blue outline that follows the pill shape */
+@utility focus-ring {
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
 }
 
 /* Surfaces */
 
-/* Deal card (inside a Magic UI MagicCard). Off-screen cards skip layout and paint, so long lists stay fast. */
+/* Frosted glass for anything that floats over content: header, dialogs, menus, buttons on photos */
+@utility glass {
+  @apply bg-glass backdrop-blur-xl backdrop-saturate-150;
+}
+
+/* Deal card. Off-screen cards skip layout and paint, so long lists stay fast.
+   Under the mouse it lifts a little and the category icon behind the offer turns upright. */
 @utility deal-card {
-  @apply rounded-card transition-shadow duration-200;
+  @apply relative flex h-full flex-col rounded-card bg-surface p-1.5 transition-[translate,background-color];
   content-visibility: auto;
-  contain-intrinsic-size: auto 19rem;
-  &:hover {
-    @apply shadow-card-hover;
+  contain-intrinsic-size: auto 17rem;
+  @media (hover: hover) {
+    &:hover {
+      @apply -translate-y-1;
+    }
+    &:hover .offer-watermark {
+      @apply rotate-0 scale-110 opacity-[0.14];
+    }
   }
 }
 
-/* Offer picture area: a quiet neutral tile with the category icon */
-@utility media {
-  @apply relative grid place-items-center overflow-hidden bg-panel text-soft;
+/* The deal's big green tag (OfferPanel), inset in the card like a ticket */
+@utility offer-panel {
+  @apply relative isolate overflow-hidden rounded-[1.125rem] bg-save-soft text-save;
 }
 
-@utility skeleton {
-  @apply animate-pulse rounded-card border border-line-soft bg-hover;
+/* The category icon, large and faint, behind the number */
+@utility offer-watermark {
+  @apply pointer-events-none absolute -right-5 -bottom-7 -z-10 size-28 -rotate-12 opacity-[0.09] transition-[rotate,scale,opacity] duration-300 ease-smooth;
 }
 
+/* What the deal is on, top-left of the tag: "Pizza, burgers & fast food".
+   Solid, not blurred: a blur on every card makes scrolling heavy on low-cost phones. */
+@utility offer-tag {
+  @apply inline-flex min-w-0 items-center gap-1.5 rounded-full bg-surface/85 px-2.5 py-1 text-caption font-semibold text-soft;
+}
+
+/* The heart on a card: the same solid look, for the same reason. */
+@utility card-action {
+  @apply bg-surface/85 hover:bg-surface;
+}
+
+/* "UP TO  50%  OFF" */
+@utility offer-headline {
+  @apply flex items-center justify-center gap-x-[0.14em] text-center leading-none font-extrabold tracking-tight tabular-nums;
+}
+
+/* The words beside the number: half its size, stacked when there are two ("UP / TO") */
+@utility offer-side {
+  @apply max-w-[2.6em] text-[0.5em] leading-[1.05] font-bold tracking-wide uppercase;
+}
+
+/* A tinted box inside a card or dialog (details list, "Pay with") */
+@utility panel {
+  @apply rounded-panel bg-fill;
+}
+
+/* The big search box: a white pill on the page, blue outline while typing */
 @utility field {
-  @apply flex h-14 items-center gap-2 rounded-field border border-line bg-surface py-0 pr-1.5 pl-4 shadow-field transition duration-200 sm:h-16 sm:pl-5;
-  &:hover {
-    @apply border-muted;
-  }
+  @apply flex h-14 items-center gap-2 rounded-field bg-surface py-0 pr-1.5 pl-5 outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color,height] sm:h-16 sm:pl-6;
   &:focus-within {
-    @apply border-primary shadow-field-focus;
+    @apply outline-primary;
   }
   /* Once results show: slimmer, and it sits in the header row on desktop */
   &[data-compact="true"] {
-    @apply h-12 shadow-none sm:h-12;
+    @apply h-12 sm:h-12;
   }
   &[data-compact="true"] .search-btn {
-    @apply size-9 sm:size-9;
+    @apply h-9 min-w-9 sm:h-9 sm:min-w-9;
   }
 }
 
 /* Compact search box inside lists (brand list) */
 @utility field-sm {
-  @apply flex h-11 items-center gap-2 rounded-button border border-line bg-surface px-3 transition duration-200;
+  @apply flex h-11 items-center gap-2 rounded-field bg-fill px-4 outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color];
+  &:hover {
+    @apply bg-hover;
+  }
   &:focus-within {
-    @apply border-primary shadow-field-focus;
+    @apply bg-surface outline-primary;
   }
 }
 
-/* Text boxes in forms (log in, register): tall enough for thumbs, a clear red edge when something needs fixing */
+/* Text boxes in forms (log in, register): filled pills, tall enough for thumbs, amber tint when something needs fixing */
 @utility input {
-  @apply h-12 w-full rounded-button border border-line bg-surface px-3 text-body text-ink transition duration-150 placeholder:text-muted;
+  @apply h-12 w-full appearance-none rounded-field bg-fill px-5 text-body text-ink outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color] placeholder:text-muted;
   &:hover {
-    @apply border-muted;
+    @apply bg-hover;
   }
   &:focus {
-    @apply border-primary shadow-field-focus outline-none;
+    @apply bg-raised outline-primary;
   }
   &[aria-invalid="true"] {
-    @apply border-urgent;
+    @apply bg-urgent-soft;
+  }
+  &[aria-invalid="true"]:focus {
+    @apply outline-urgent;
   }
 }
 
@@ -85,73 +135,80 @@
 
 /* "30% OFF": the discount, in the money colour */
 @utility badge {
-  @apply inline-flex items-center rounded-chip border border-save/30 bg-save-soft px-2 py-1 text-caption font-bold whitespace-nowrap text-save;
+  @apply inline-flex items-center rounded-chip bg-save-soft px-2.5 py-1 text-caption font-bold whitespace-nowrap text-save;
 }
 
 @utility icon-btn {
-  @apply grid size-tap place-items-center rounded-full text-soft transition;
+  @apply grid size-tap place-items-center rounded-full text-soft transition-[background-color,color,scale] focus-ring;
   &:hover {
     @apply bg-hover text-ink;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active {
+    @apply scale-95;
   }
 }
 
+/* Coupon code: a tinted pill you tap to copy */
 @utility code-btn {
-  @apply inline-flex min-h-9 items-center gap-1.5 rounded-chip border border-dashed border-soft px-3 text-small font-bold tracking-wide text-ink transition;
+  @apply inline-flex min-h-10 items-center gap-1.5 rounded-chip bg-primary-soft px-4 font-mono text-small font-bold tracking-wider text-primary transition-[background-color,color,scale] focus-ring;
   &:hover {
-    @apply border-primary bg-primary-soft text-primary;
+    @apply bg-primary text-on-primary;
+  }
+  &:active {
+    @apply scale-95;
   }
 }
 
 /* Small pill: smart-search chips and quick-search suggestions */
 @utility chip {
-  @apply inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-small font-medium whitespace-nowrap text-ink transition duration-150;
+  @apply inline-flex h-10 shrink-0 items-center gap-1.5 rounded-chip bg-fill px-4 text-small font-medium whitespace-nowrap text-ink transition-[background-color,color,scale] focus-ring;
   &:hover {
-    @apply border-muted bg-hover;
+    @apply bg-hover;
+  }
+  &:active {
+    @apply scale-[0.97];
   }
   &[data-state="on"] {
-    @apply border-primary bg-primary-soft font-semibold text-primary;
-  }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+    @apply bg-primary-soft font-semibold text-primary;
   }
 }
 
 /* Filter pill: categories, Liked toggle, select triggers. Selected = data-state="on" (Radix) or aria-pressed. */
 @utility pill {
-  @apply inline-flex h-tap shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-4 text-small font-semibold whitespace-nowrap text-ink transition duration-150;
+  @apply inline-flex h-tap shrink-0 items-center gap-2 rounded-chip bg-fill px-4 text-small font-semibold whitespace-nowrap text-ink transition-[background-color,color,scale] focus-ring;
   &:hover {
-    @apply border-muted;
+    @apply bg-hover;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active {
+    @apply scale-[0.97];
   }
   &[data-state="on"],
   &[aria-pressed="true"],
   &[data-active="true"] {
-    @apply border-primary bg-primary text-on-primary;
+    @apply bg-primary text-on-primary;
   }
   &[data-state="on"] .count,
   &[aria-pressed="true"] .count,
   &[data-active="true"] .count {
     @apply text-on-primary/80;
   }
+  &[data-state="open"] {
+    @apply bg-hover;
+  }
 }
 
 /* A quiet number next to a filter: plain text, no bubble, so long lists do not turn into rows of shapes */
 @utility count {
-  @apply text-caption font-medium tabular-nums text-muted;
+  @apply text-caption font-medium tabular-nums text-muted transition-colors;
 }
 
-/* Dropdown menu (Radix Select content) */
+/* Dropdown menu (Radix Select / DropdownMenu content): frosted glass */
 @utility menu {
-  @apply z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-(--radix-select-trigger-width) overflow-hidden rounded-card border border-line bg-surface p-1.5 shadow-menu;
+  @apply z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-(--radix-select-trigger-width) overflow-hidden rounded-card bg-glass-strong p-1.5 backdrop-blur-2xl backdrop-saturate-150;
 }
 
 @utility menu-item {
-  @apply relative flex min-h-tap cursor-pointer items-center gap-2 rounded-button py-2 pr-10 pl-3 text-body text-ink outline-none select-none;
+  @apply relative flex min-h-tap cursor-pointer items-center gap-2 rounded-chip py-2 pr-10 pl-4 text-body text-ink outline-none transition-colors select-none;
   &[data-highlighted] {
     @apply bg-hover;
   }
@@ -160,11 +217,11 @@
   }
 }
 
-/* Row in a pick-one list (brand list): big, plain, with a tick-like highlight when chosen */
+/* Row in a pick-one list (sidebar, brand list): a full-width pill, tinted when chosen */
 @utility list-row {
-  @apply flex min-h-tap w-full items-center gap-3 rounded-button px-3 py-1.5 text-left text-body text-ink transition;
+  @apply flex min-h-tap w-full items-center gap-3 rounded-chip px-3.5 py-1.5 text-left text-body text-ink transition-[background-color,color];
   &:hover {
-    @apply bg-hover;
+    @apply bg-fill;
   }
   &:focus-visible {
     @apply outline-2 -outline-offset-2 outline-primary;
@@ -181,23 +238,42 @@
   }
 }
 
-/* Dialogs: a dimmed backdrop, and a panel that is a bottom sheet on phones and a centred box on larger screens */
+/* Dialogs: a blurred, dimmed backdrop, and a glass panel that is a bottom sheet on phones and a centred box on larger screens.
+   Both animate out as well as in (Radix waits for the closing animation before removing them). */
 @utility overlay {
-  @apply fixed inset-0 z-50 animate-fade bg-scrim;
+  @apply fixed inset-0 z-50 animate-fade bg-scrim backdrop-blur-sm;
+  &[data-state="closed"] {
+    animation: fade-out 0.3s ease forwards;
+  }
 }
 
 @utility sheet {
-  @apply fixed inset-x-0 bottom-0 z-50 animate-pop rounded-t-2xl border border-line bg-surface shadow-menu outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[calc(100%-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-card;
+  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-[2rem] bg-glass-strong outline-none backdrop-blur-2xl backdrop-saturate-150 sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[calc(100%-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[1.75rem];
+  animation: sheet-up 0.3s var(--ease-smooth) backwards;
+  &[data-state="closed"] {
+    animation: sheet-down 0.3s var(--ease-smooth) forwards;
+  }
+  @media (width >= 40rem) {
+    animation: pop 0.3s var(--ease-smooth) backwards;
+    &[data-state="closed"] {
+      animation: pop-out 0.3s var(--ease-smooth) forwards;
+    }
+  }
+}
+
+/* The little handle at the top of a bottom sheet (phones only) */
+@utility sheet-handle {
+  @apply mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-hover sm:hidden;
 }
 
 /* Buttons */
 @utility btn-primary {
-  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button bg-primary px-5 text-body font-semibold text-on-primary transition duration-150;
+  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button bg-primary px-6 text-body font-semibold text-on-primary transition-[background-color,scale,opacity] focus-ring;
   &:hover {
     @apply bg-primary-strong;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active:not(:disabled) {
+    @apply scale-[0.97];
   }
   &:disabled {
     @apply cursor-not-allowed opacity-50;
@@ -205,12 +281,15 @@
 }
 
 @utility btn-secondary {
-  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button border border-line bg-surface px-5 text-body font-semibold text-ink transition duration-150;
+  @apply inline-flex h-tap items-center justify-center gap-2 rounded-button bg-fill px-6 text-body font-semibold text-ink transition-[background-color,color,scale,opacity] focus-ring;
   &:hover {
-    @apply border-primary text-primary;
+    @apply bg-hover;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active:not(:disabled) {
+    @apply scale-[0.97];
+  }
+  &[aria-pressed="true"] {
+    @apply bg-primary-soft text-primary;
   }
   &:disabled {
     @apply cursor-wait opacity-60;
@@ -219,25 +298,34 @@
 
 /* Heart button on a card or in the details */
 @utility like-btn {
-  @apply grid size-tap place-items-center rounded-full text-soft transition duration-150;
+  @apply grid size-tap place-items-center rounded-full text-soft transition-[background-color,color,scale] focus-ring;
   &:hover {
-    @apply bg-hover text-primary;
+    @apply text-primary;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active {
+    @apply scale-90;
   }
   &[aria-pressed="true"] {
     @apply text-primary;
   }
 }
 
-/* The search button at the end of the search bar */
+/* The search button at the end of the search bar: a round icon button, or a pill with "Search" on larger screens */
 @utility search-btn {
-  @apply grid size-11 shrink-0 place-items-center rounded-button bg-primary text-on-primary transition duration-150 sm:size-12;
+  @apply inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-on-primary transition-[background-color,scale,min-width,height] focus-ring sm:h-12 sm:min-w-12;
   &:hover {
     @apply bg-primary-strong;
   }
-  &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+  &:active {
+    @apply scale-95;
   }
+}
+
+/* Text link inside prose and footers */
+@utility link {
+  @apply rounded-sm font-semibold text-primary underline-offset-4 transition-colors hover:underline focus-ring;
+}
+
+@utility quiet-link {
+  @apply rounded-sm transition-colors hover:text-primary focus-ring;
 }

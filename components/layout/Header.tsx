@@ -37,16 +37,16 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
           e.preventDefault();
           onHome();
         }}
-        className="col-start-1 row-start-1 flex items-center gap-2 justify-self-start text-title font-bold"
+        className="col-start-1 row-start-1 flex items-center gap-2.5 justify-self-start rounded-full text-title font-bold focus-ring"
         aria-label="DiscDeal home"
       >
-        <span className="grid size-8 place-items-center rounded-button bg-primary pb-0.5 font-bold text-on-primary">d</span>
+        <span className="grid size-9 place-items-center rounded-full bg-primary pb-0.5 font-bold text-on-primary">d</span>
         {/* The word needs room: on narrow phones the city, account and theme buttons come first. */}
         <span className="hidden min-[420px]:inline">discdeal</span>
       </Link>
 
       <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 ${browsing ? "lg:col-start-3" : ""}`}>
-        {!browsing && <span className="hidden text-small text-muted md:block">New deals every day</span>}
+        {!browsing && <span className="hidden rounded-full bg-fill px-3 py-1.5 text-caption font-medium text-soft md:block">New deals every day</span>}
         <Select label="Your city" icon="pin" value={city ?? "all"} options={CITY_OPTIONS} onChange={(value) => onCityChange(value === "all" ? null : value)} />
         <AccountButton />
         <ThemeToggle />

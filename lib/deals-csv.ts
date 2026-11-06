@@ -87,7 +87,10 @@ export const DealRowSchema = z
     source_url: z.url("source_url must be a full link (https://…)"),
     checked_on: z.string().trim().regex(DATE, "checked_on must look like 2026-11-01"),
     tags: z.string().default(""),
-    image_url: z.union([z.literal(""), z.url("image_url must be a full link")]).default(""),
+    // A full https link, or a picture uploaded with the site: /deals/khaadi-lawn.webp (the file goes in public/deals/).
+    image_url: z
+      .union([z.literal(""), z.string().regex(/^\/deals\/[\w\-./]+$/), z.url()], "image_url must be a full link (https://…) or /deals/file-name.webp")
+      .default(""),
   })
   .superRefine((row, ctx) => {
     const category = CATEGORIES.find((c) => c.id === row.category);

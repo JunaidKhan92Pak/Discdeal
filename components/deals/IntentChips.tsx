@@ -16,7 +16,7 @@ export function IntentChips({ parts, onRemove, variant = "row" }: IntentChipsPro
     <button
       key={part.key}
       type="button"
-      className="chip h-9 animate-fade border-primary/30 bg-primary-soft"
+      className="chip h-9 animate-pop bg-primary-soft font-semibold text-primary"
       onClick={() => onRemove(part)}
       aria-label={`Remove ${part.label} from search`}
       title={part.typed ? `You typed “${part.typed}”` : undefined}
@@ -24,7 +24,7 @@ export function IntentChips({ parts, onRemove, variant = "row" }: IntentChipsPro
       <Icon name={part.icon} className="size-4 text-primary" />
       {part.label}
       {part.typed && <span className="text-caption text-muted">(you typed {part.typed})</span>}
-      <Icon name="close" className="size-4 text-muted" />
+      <Icon name="close" className="size-4 opacity-70" />
     </button>
   ));
 

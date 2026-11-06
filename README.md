@@ -233,11 +233,11 @@ People need a free account to save ("like") deals, so their likes are on every p
 Tapping a heart while logged out opens the **Log in / Create account** window with the reason; once they are in,
 the deal they tapped is saved without tapping again. "Liked" works the same way.
 
-- **Register**: full name, username, city, email, mobile number, password and confirm password. **Log in**: username
-  *or* email, and password. Each problem is shown under its field in plain words; the form checks in the browser
+- **Register**: full name, city, email, mobile number, password and confirm password (no username to think up: an internal one is made from the email). **Log in**: email
+  and password. Each problem is shown under its field in plain words; the form checks in the browser
   first (no wait), and the server checks again (`lib/account.ts`, the same rules on both sides). Mobile numbers are
   understood in any common form (0300 1234567, +92 300 1234567 …) and stored as +923001234567.
-- **Passwords** are never stored, only a scrypt hash with its own salt (`lib/server/password.ts`). A wrong username
+- **Passwords** are never stored, only a scrypt hash with its own salt (`lib/server/password.ts`). A wrong email
   and a wrong password give the same message and take the same time, so nobody can find out who has an account.
 - **Sessions**: a random token in a cookie page scripts cannot read (HttpOnly, Secure, SameSite=Lax), valid 30 days
   (`SESSION_DAYS`). The database keeps only the token's SHA-256. Log out deletes it.

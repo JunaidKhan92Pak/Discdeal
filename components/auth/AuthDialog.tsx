@@ -28,7 +28,8 @@ export function AuthDialog({ city }: { city: CityId | null }) {
       <Dialog.Portal>
         <Dialog.Overlay className="overlay" />
         <Dialog.Content className="sheet flex max-h-[92svh] flex-col">
-          <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+          <div className="sheet-handle" aria-hidden="true" />
+          <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-3 sm:pt-5">
             <div>
               <Dialog.Title className="text-title">{tab === "login" ? "Welcome back" : "Create your free account"}</Dialog.Title>
               <Dialog.Description className="mt-0.5 text-small text-soft">
@@ -41,12 +42,12 @@ export function AuthDialog({ city }: { city: CityId | null }) {
           </div>
 
           <Tabs.Root value={tab} onValueChange={(value) => setTab(value as "login" | "register")} className="flex min-h-0 flex-1 flex-col">
-            <Tabs.List aria-label="Log in or create an account" className="mx-5 grid grid-cols-2 gap-1 rounded-button bg-hover p-1">
+            <Tabs.List aria-label="Log in or create an account" className="mx-5 grid grid-cols-2 gap-1 rounded-full bg-fill p-1">
               {(["login", "register"] as const).map((value) => (
                 <Tabs.Trigger
                   key={value}
                   value={value}
-                  className="h-10 rounded-[calc(var(--radius-button)-2px)] text-body font-semibold text-soft transition duration-150 focus-visible:outline-2 focus-visible:outline-primary data-[state=active]:bg-surface data-[state=active]:text-ink data-[state=active]:shadow-soft"
+                  className="h-10 rounded-full text-body font-semibold text-soft transition-colors focus-visible:outline-2 focus-visible:outline-primary data-[state=active]:bg-raised data-[state=active]:text-ink"
                 >
                   {value === "login" ? "Log in" : "Create account"}
                 </Tabs.Trigger>
@@ -118,8 +119,8 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
         )
       }
     >
-      <Field label="Username or email" error={errors.login}>
-        {(props) => <input {...props} name="login" autoComplete="username" autoCapitalize="none" spellCheck={false} className="input" />}
+      <Field label="Email" error={errors.login}>
+        {(props) => <input {...props} name="login" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} className="input" />}
       </Field>
       <PasswordField label="Password" name="password" autoComplete="current-password" error={errors.password} />
       <FormError message={errors.form} />
@@ -155,9 +156,6 @@ function RegisterForm({ city, onSwitch }: { city: CityId | null; onSwitch: () =>
     >
       <Field label="Full name" error={errors.name}>
         {(props) => <input {...props} name="name" autoComplete="name" className="input" />}
-      </Field>
-      <Field label="Username" hint="You can log in with this or your email. English letters, numbers, _ or ." error={errors.username}>
-        {(props) => <input {...props} name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={20} className="input" />}
       </Field>
       <Field label="City" error={errors.city}>
         {(props) => (
@@ -246,7 +244,7 @@ function PasswordField({ label, name, autoComplete, hint, error }: { label: stri
 function FormError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-button bg-urgent/10 px-3 py-2.5 text-small font-medium text-urgent">
+    <p role="alert" className="rounded-panel bg-urgent-soft px-4 py-3 text-small font-medium text-urgent">
       {message}
     </p>
   );

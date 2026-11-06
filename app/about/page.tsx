@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SectionTitle, SiteShell } from "@/components/site/SiteShell";
+import { FaqList, PageIntro, SectionTitle, SiteShell } from "@/components/site/SiteShell";
+import { Icon } from "@/components/ui/Icon";
 import { aboutFaq } from "@/lib/about";
 import { formatDate } from "@/lib/format";
 import { getPagesData } from "@/lib/server/pages-data";
@@ -25,30 +26,21 @@ export default async function About() {
   return (
     <SiteShell breadcrumbs={crumbs}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(graph(breadcrumbList(crumbs), faqPage(faq))) }} />
-      <h1 className="text-headline text-ink">About {SITE_NAME}</h1>
-      <p className="mt-2 max-w-3xl text-body text-soft">{faq[0].answer}</p>
+      <PageIntro title={`About ${SITE_NAME}`}>{faq[0].answer}</PageIntro>
 
       <SectionTitle>Questions and answers</SectionTitle>
-      <dl className="max-w-3xl space-y-5">
-        {faq.slice(1).map((f) => (
-          <div key={f.question}>
-            <dt className="text-body font-semibold text-ink">{f.question}</dt>
-            <dd className="mt-1 text-body text-soft">{f.answer}</dd>
-          </div>
-        ))}
-      </dl>
+      <FaqList items={faq.slice(1)} className="max-w-3xl" />
 
-      <p className="mt-10 text-body text-soft">
-        Updated {formatDate(data.asOf)}.{" "}
-        <Link href="/deals" className="font-semibold text-primary hover:underline">
-          Browse all deals
-        </Link>{" "}
-        or{" "}
-        <Link href="/" className="font-semibold text-primary hover:underline">
-          start searching
+      <div className="mt-12 flex flex-wrap items-center gap-3" data-reveal>
+        <span className="text-body text-soft">Updated {formatDate(data.asOf)}.</span>
+        <Link href="/" className="btn-primary">
+          <Icon name="search" className="size-5" />
+          Start searching
         </Link>
-        .
-      </p>
+        <Link href="/deals" className="btn-secondary">
+          Browse all deals
+        </Link>
+      </div>
     </SiteShell>
   );
 }

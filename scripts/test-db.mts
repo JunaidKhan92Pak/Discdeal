@@ -12,7 +12,7 @@ import { csvToCards, recordsToCards } from "@/lib/cards-csv";
 import { csvToDeals, parseCsv, recordsToDeals, todayInPakistan } from "@/lib/deals-csv";
 import { SELECT_CARDS, SELECT_LIVE_DEALS, SYNC_CATALOG_STATEMENT, checkCatalog, syncCatalog, syncStatementParams } from "@/lib/db-sql";
 import { RegisterSchema, normalizePhone } from "@/lib/account";
-import { addLikes, createSession, createUser, deleteSession, findUserForLogin, likedIds, removeLike, userBySession, MAX_LIKES, type Query } from "@/lib/account-sql";
+import { addLikes, createSession, createUser, deleteSession, findUserForLogin, likedIds, removeLike, userBySession, MAX_LIKES, type Query, usernameFor } from "@/lib/account-sql";
 import { hashPassword, verifyPassword } from "@/lib/server/password";
 
 let failed = 0;
@@ -105,15 +105,16 @@ check("quotes, backslashes and SQL-looking text are stored exactly", trickyRow?.
 /* ---------------- accounts ---------------- */
 
 const q: Query = async (text, params) => (await db.query(text, params)).rows as never;
-const form = { name: "Ayesha Khan", username: "Ayesha_K", city: "lahore", email: "Ayesha@Example.com", phone: "0300-1234567", password: "chai-2026!", confirmPassword: "chai-2026!" };
+const form = { name: "Ayesha Khan", city: "lahore", email: "Ayesha@Example.com", phone: "0300-1234567", password: "chai-2026!", confirmPassword: "chai-2026!" };
 const input = RegisterSchema.parse(form);
-check("register form tidies input (lowercase username/email, +92 phone)", input.username === "ayesha_k" && input.email === "ayesha@example.com" && input.phone === "+923001234567");
+check("register form tidies input (lowercase email, +92 phone)", input.email === "ayesha@example.com" && input.phone === "+923001234567");
 check("phone numbers in every common form are understood", ["03001234567", "+92 300 1234567", "923001234567", "300 1234567"].every((p) => normalizePhone(p) === "+923001234567") && normalizePhone("12345") === null);
 check("register form rejects bad input with a message per field", (() => {
-  const bad = RegisterSchema.safeParse({ ...form, username: "a b", email: "nope", phone: "123", password: "short", confirmPassword: "other", city: "paris" });
+  const bad = RegisterSchema.safeParse({ ...form, email: "nope", phone: "123", password: "short", confirmPassword: "other", city: "paris" });
   const fields = new Set(bad.success ? [] : bad.error.issues.map((i) => String(i.path[0])));
-  return ["username", "email", "phone", "password", "city"].every((f) => fields.has(f));
+  return ["email", "phone", "password", "city"].every((f) => fields.has(f));
 })());
+check("internal usernames come from the email, safe and short", usernameFor("Ayesha.K+deals@x.com", 0) === "ayesha.kdeals" && usernameFor("a@x.com", 0) === "usera" && /^bilal\d{4}$/.test(usernameFor("bilal@x.com", 1)));
 check("passwords must match", !RegisterSchema.safeParse({ ...form, confirmPassword: "chai-2027!" }).success);
 
 const hash = await hashPassword(form.password);
@@ -123,16 +124,17 @@ check("right password passes, wrong one fails", (await verifyPassword(form.passw
 const created = await createUser(q, input, hash);
 check("an account is created", created.ok);
 const userId = created.ok ? created.user.id : "0";
-const sameEmail = await createUser(q, { ...input, username: "someone_else" }, hash);
+check("the account gets an internal username from its email", created.ok && created.user.username === "ayesha");
+const sameEmail = await createUser(q, input, hash);
 check("the same email cannot register twice", !sameEmail.ok && sameEmail.field === "email");
-const sameName = await createUser(q, { ...input, email: "other@example.com" }, hash);
-check("the same username cannot register twice", !sameName.ok && sameName.field === "username");
-check("log in finds the account by username or by email", (await findUserForLogin(q, "ayesha_k"))?.id === userId && (await findUserForLogin(q, "ayesha@example.com"))?.id === userId);
+const sameStart = await createUser(q, { ...input, email: "ayesha@other.com" }, hash);
+check("a second 'ayesha@…' still registers, with a different username", sameStart.ok && /^ayesha\d{4}$/.test(sameStart.user.username));
+check("log in finds the account by email (and by the username of older accounts)", (await findUserForLogin(q, "ayesha@example.com"))?.id === userId && (await findUserForLogin(q, "ayesha"))?.id === userId);
 check("an unknown login finds nothing", (await findUserForLogin(q, "nobody")) === null);
 
 await createSession(q, userId, "token-a", new Date(Date.now() + 60_000));
 await createSession(q, userId, "token-old", new Date(Date.now() - 60_000));
-check("a session finds its user", (await userBySession(q, "token-a"))?.username === "ayesha_k");
+check("a session finds its user", (await userBySession(q, "token-a"))?.email === "ayesha@example.com");
 check("an expired or unknown session finds nobody", (await userBySession(q, "token-old")) === null && (await userBySession(q, "nope")) === null);
 await deleteSession(q, "token-a");
 check("after log out the session is gone", (await userBySession(q, "token-a")) === null);

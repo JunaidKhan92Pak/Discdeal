@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Label } from "radix-ui";
 import { Icon } from "@/components/ui/Icon";
+import { EASE, gsap, reducedMotion, sleepWhenIdle } from "@/lib/motion";
 
 type SearchBarProps = {
   value: string;
@@ -16,14 +17,33 @@ type SearchBarProps = {
 
 export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, onSubmit }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Rises in just after the headline (see Hero). Mounted once: it stays put while the screen switches to results.
+  useLayoutEffect(() => {
+    if (reducedMotion() || !formRef.current) return;
+    const tween = gsap.to(formRef.current, { opacity: 1, y: 0, duration: 0.9, delay: 0.3, ease: EASE, clearProps: "transform", onComplete: sleepWhenIdle });
+    return () => {
+      tween.kill();
+    };
+  }, []);
 
   return (
-    <form role="search" onSubmit={(e) => {
+    <form
+      ref={formRef}
+      data-hero="search"
+      role="search"
+      onSubmit={(e) => {
         e.preventDefault();
         inputRef.current?.blur();
         onSubmit();
-      }} className={`mx-auto w-full max-w-search ${compact ? "lg:mx-0" : ""}`}>
-      <Label.Root htmlFor="search" className="sr-only">Search deals</Label.Root>
+      }}
+      className={`mx-auto w-full max-w-search ${compact ? "lg:mx-0" : ""}`}
+    >
+      <Label.Root htmlFor="search" className="sr-only">
+        Search deals
+      </Label.Root>
+      {/* One search symbol only, on the button. The pill shape and the example text already say "type here". */}
       <div className="field" data-compact={compact}>
         <input
           id="search"
@@ -48,13 +68,15 @@ export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, o
               onChange("");
               inputRef.current?.focus();
             }}
-            className="icon-btn shrink-0"
+            className="icon-btn size-9 shrink-0 animate-fade bg-fill"
           >
-            <Icon name="close" className="size-5" />
+            <Icon name="close" className="size-4" />
           </button>
         )}
-        <button type="submit" aria-label="Search deals" className="search-btn">
-          <Icon name="search" className="size-6" />
+        {/* The magnifier everyone knows, plus the word on larger screens (clearest for every age); icon only when compact. */}
+        <button type="submit" aria-label="Search deals" className={`search-btn ${compact ? "" : "sm:px-5"}`}>
+          <Icon name="search" className="size-5" strokeWidth={2.25} />
+          {!compact && <span className="hidden text-body font-semibold sm:inline">Search</span>}
         </button>
       </div>
     </form>

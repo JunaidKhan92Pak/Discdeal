@@ -44,6 +44,7 @@ const PATHS = {
   pin: <><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   check: <path d="m5 12 5 5L20 7" />,
+  copy: <><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5" /></>,
   "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-down": <path d="m6 9 6 6 6-6" />,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,

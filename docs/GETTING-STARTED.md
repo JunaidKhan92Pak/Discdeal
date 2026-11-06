@@ -42,7 +42,7 @@ CSV (UTF-8). One row = one deal. Columns:
 | `source_url` | The bank's or brand's own page where you saw it | `https://www.hbl.com/…` |
 | `checked_on` | The day you checked it, `YYYY-MM-DD` | `2026-11-01` |
 | `tags` | Extra search words, separated by spaces | `pizza` |
-| `image_url` | Optional picture link (only use pictures you have permission for) | |
+| `image_url` | Optional picture (only use pictures you have permission for): a full `https://` link, or a file you put in `public/deals/`. Wide pictures work best (16:10). Add your picture host to `NEXT_PUBLIC_IMAGE_HOSTS` so it is resized for phones | `/deals/khaadi-lawn.webp` |
 
 **Ids you can use** (cities and categories are in `lib/taxonomy.ts`, cards in `data/cards.csv`):
 - Cities: `lahore karachi islamabad rawalpindi faisalabad multan hyderabad sialkot gujranwala peshawar quetta sahiwal bahawalpur sargodha`

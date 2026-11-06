@@ -11,10 +11,25 @@
 }
 
 /* Layout */
+/* The app's one screen. Desktop: exactly the window, and only the results (and the sidebar) scroll inside it.
+   Phones and tablets: the whole page scrolls, so deals get the full screen; the search bar sticks to the top (Header). */
 @utility page {
-  @apply relative mx-auto flex h-svh w-full flex-col overflow-hidden px-gutter py-4;
-  @media (max-height: 34rem) {
+  @apply relative mx-auto flex min-h-svh w-full flex-col px-gutter py-4;
+  @media (width >= 64rem) {
+    height: 100svh;
+    overflow: hidden;
+  }
+  @media (width >= 64rem) and (max-height: 34rem) {
     overflow-y: auto;
+  }
+}
+
+/* Phones and tablets, while browsing: the header becomes a frosted bar across the full width that sticks with only
+   its search row showing. `top` is negative by the logo row's height (2.75rem + the 0.75rem above the search, less a
+   little breathing room), so the logo row scrolls away and the search stays: no script needed. */
+@utility app-bar {
+  @media (width < 64rem) {
+    @apply glass sticky -top-12 z-30 -mx-gutter px-gutter pb-2.5;
   }
 }
 
@@ -42,6 +57,12 @@
   @apply relative flex h-full flex-col rounded-card bg-surface p-1.5 transition-[translate,background-color];
   content-visibility: auto;
   contain-intrinsic-size: auto 17rem;
+  /* Phones: one card per row, sideways: the offer on the left, the details beside it */
+  @media (width < 40rem) {
+    flex-direction: row;
+    min-height: 9.5rem;
+    contain-intrinsic-size: auto 9.5rem;
+  }
   @media (hover: hover) {
     &:hover {
       @apply -translate-y-1;
@@ -54,7 +75,7 @@
 
 /* The deal's big green tag (OfferPanel), inset in the card like a ticket */
 @utility offer-panel {
-  @apply relative isolate overflow-hidden rounded-[1.125rem] bg-save-soft text-save;
+  @apply relative isolate overflow-hidden rounded-panel bg-save-soft text-save;
 }
 
 /* The category icon, large and faint, behind the number */
@@ -116,7 +137,7 @@
 
 /* Text boxes in forms (log in, register): filled pills, tall enough for thumbs, amber tint when something needs fixing */
 @utility input {
-  @apply h-12 w-full appearance-none rounded-field bg-fill px-5 text-body text-ink outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color] placeholder:text-muted;
+  @apply h-12 w-full scroll-mt-4 scroll-mb-40 appearance-none rounded-field bg-fill px-5 text-body text-ink outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color] placeholder:text-muted;
   &:hover {
     @apply bg-hover;
   }
@@ -248,7 +269,7 @@
 }
 
 @utility sheet {
-  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-[2rem] bg-glass-strong outline-none backdrop-blur-2xl backdrop-saturate-150 sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[calc(100%-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[1.75rem];
+  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-4xl bg-glass-strong outline-none backdrop-blur-2xl backdrop-saturate-150 sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[calc(100%-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[1.75rem];
   animation: sheet-up 0.3s var(--ease-smooth) backwards;
   &[data-state="closed"] {
     animation: sheet-down 0.3s var(--ease-smooth) forwards;

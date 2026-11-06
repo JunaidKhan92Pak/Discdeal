@@ -19,7 +19,9 @@ export { gsap };
  * when an animation finishes: if nothing else is playing, the clock stops. Any new GSAP animation restarts it.
  */
 export function sleepWhenIdle() {
-  const busy = gsap.globalTimeline.getChildren(true, true, true).some((child) => child.isActive());
+  // "Busy" includes animations still waiting out their delay (isActive() is false for those), so a delayed entrance
+  // is never frozen half-way. Finished animations have progress 1; paused ones do not need the clock.
+  const busy = gsap.globalTimeline.getChildren(true, true, true).some((child) => !child.paused() && child.progress() < 1);
   if (!busy) gsap.ticker.sleep();
 }
 

@@ -57,7 +57,7 @@ export function DealModal({ deal, myCardIds, cards, open, returnFocusTo, liked, 
             />
           </div>
 
-          <div className="space-y-5 px-5 pt-3 pb-5 sm:px-6 sm:pb-6">
+          <div className="space-y-5 px-5 pt-3 sm:px-6">
             <div>
               <Dialog.Title className="text-headline text-ink">
                 <span className="sr-only">{formatOffer(deal)} at </span>
@@ -141,9 +141,12 @@ export function DealModal({ deal, myCardIds, cards, open, returnFocusTo, liked, 
               </span>
             </p>
 
-            <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            {/* Always within thumb reach: the two actions stay pinned to the bottom while the details scroll. */}
+            <div className="sticky bottom-0 -mx-5 flex flex-row-reverse gap-2 bg-glass-strong px-5 pt-3 pb-4 backdrop-blur-xl sm:-mx-6 sm:px-6 sm:pb-5">
               <a href={deal.sourceUrl} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1">
-                View offer on {source}
+                <span>
+                  View offer<span className="hidden sm:inline"> on {source}</span>
+                </span>
                 <Icon name="arrow-up-right" className="size-5" />
               </a>
               <button type="button" className="btn-secondary" aria-pressed={liked} onClick={() => onToggleLike(deal.id)}>

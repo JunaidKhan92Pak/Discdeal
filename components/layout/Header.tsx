@@ -20,15 +20,18 @@ type HeaderProps = {
 /**
  * Logo, search and city in one grid, the same width as the results below so their edges line up.
  * Before a search the search stage fills the screen under the logo row. Once browsing, on desktop the search bar
- * moves up into the logo row (one band instead of two); on phones it stays on its own row under the logo.
+ * moves up into the logo row (one band instead of two); on phones it stays on its own row under the logo, and while
+ * scrolling the logo row slides away and the search stays pinned to the top (app-bar).
  * The search input is never re-mounted, so typing and focus are not interrupted when it moves.
  */
 export function Header({ city, onCityChange, onHome, browsing, children }: HeaderProps) {
   return (
     <header
-      className={`mx-auto grid w-full max-w-browse grid-cols-[1fr_auto] items-center gap-x-4 ${
-        // Same first column as the sidebar below, so the search bar starts exactly where the results start.
-        browsing ? "shrink-0 lg:grid-cols-[16rem_minmax(0,1fr)_auto] lg:gap-x-8" : "min-h-0 grow grid-rows-[auto_1fr]"
+      className={`grid grid-cols-[1fr_auto] items-center gap-x-4 ${
+        browsing
+          ? // Phones: a sticky search bar (app-bar). Desktop: same first column as the sidebar, so the search starts where the results do.
+            "app-bar shrink-0 lg:mx-auto lg:w-full lg:max-w-browse lg:grid-cols-[16rem_minmax(0,1fr)_auto] lg:gap-x-8"
+          : "mx-auto min-h-0 w-full max-w-browse grow grid-rows-[auto_1fr]"
       }`}
     >
       <Link

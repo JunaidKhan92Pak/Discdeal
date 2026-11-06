@@ -48,6 +48,9 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#f3f2ee" },
     { media: "(prefers-color-scheme: dark)", color: "#121110" },
   ],
+  // When the phone keyboard opens, the page shrinks to the space above it (Android Chrome), so the bottom sheets
+  // (log in, create account) and their buttons stay visible instead of sitting behind the keyboard.
+  interactiveWidget: "resizes-content",
 };
 
 /** Who we are and how to search us, for search engines and AI assistants (schema.org, read from the page source). */

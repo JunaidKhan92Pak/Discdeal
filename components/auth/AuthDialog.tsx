@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Dialog, Tabs } from "radix-ui";
 import { Icon } from "@/components/ui/Icon";
 import { account, useAccount, type SubmitResult } from "@/hooks/useAccount";
@@ -27,7 +27,8 @@ export function AuthDialog({ city }: { city: CityId | null }) {
     <Dialog.Root open={prompt !== null} onOpenChange={(open) => !open && account.close()}>
       <Dialog.Portal>
         <Dialog.Overlay className="overlay" />
-        <Dialog.Content className="sheet flex max-h-[92svh] flex-col">
+        {/* dvh: with the keyboard open the sheet shrinks to the space above it (see `interactiveWidget` in app/layout.tsx). */}
+        <Dialog.Content className="sheet flex max-h-[92dvh] flex-col">
           <div className="sheet-handle" aria-hidden="true" />
           <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-3 sm:pt-5">
             <div>
@@ -53,7 +54,7 @@ export function AuthDialog({ city }: { city: CityId | null }) {
                 </Tabs.Trigger>
               ))}
             </Tabs.List>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4">
               <Tabs.Content value="login">
                 <LoginForm onSwitch={() => setTab("register")} />
               </Tabs.Content>
@@ -97,9 +98,36 @@ function useSubmit() {
   return { errors, busy, submit };
 }
 
+/** Puts the cursor in the first field with a problem, in the order they appear on screen (top to bottom). */
 function focusFirstProblem(form: HTMLFormElement, errors: FieldErrors) {
-  const field = Object.keys(errors).find((name) => name !== "form");
-  if (field) form.querySelector<HTMLInputElement>(`[name="${field}"]`)?.focus();
+  const fields = [...form.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]")];
+  fields.find((field) => errors[field.name])?.focus();
+}
+
+/**
+ * Phone keyboards show "Next" on each field, and Enter in a form normally sends it: pressing Next after the name would
+ * submit a half-filled form and cover it in errors. So Enter moves to the next field; only on the last one it sends.
+ */
+function nextFieldOnEnter(event: KeyboardEvent<HTMLFormElement>) {
+  if (event.key !== "Enter" || event.nativeEvent.isComposing || !(event.target instanceof HTMLInputElement)) return;
+  const fields = [...event.currentTarget.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")];
+  const index = fields.indexOf(event.target);
+  if (index < 0 || index === fields.length - 1) return;
+  event.preventDefault();
+  fields[index + 1].focus();
+}
+
+/**
+ * The send button (and any problem from the server), pinned to the bottom of the sheet: always in thumb reach, even
+ * halfway down a long form, and right above the keyboard when it is open.
+ */
+function FormFooter({ error, children }: { error?: string; children: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 -mx-5 space-y-3 bg-glass-strong px-5 pt-3 pb-5 backdrop-blur-xl">
+      <FormError message={error} />
+      {children}
+    </div>
+  );
 }
 
 function LoginForm({ onSwitch }: { onSwitch: () => void }) {
@@ -108,6 +136,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     <form
       noValidate
       className="space-y-4"
+      onKeyDown={nextFieldOnEnter}
       onSubmit={(event) =>
         submit(
           event,
@@ -120,19 +149,22 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       }
     >
       <Field label="Email" error={errors.login}>
-        {(props) => <input {...props} name="login" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} className="input" />}
+        {(props) => (
+          <input {...props} name="login" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} enterKeyHint="next" className="input" />
+        )}
       </Field>
-      <PasswordField label="Password" name="password" autoComplete="current-password" error={errors.password} />
-      <FormError message={errors.form} />
-      <button type="submit" className="btn-primary w-full" disabled={busy}>
-        {busy ? "Logging in…" : "Log in"}
-      </button>
-      <p className="text-center text-small text-soft">
-        New here?{" "}
-        <button type="button" onClick={onSwitch} className="font-semibold text-primary hover:underline">
-          Create a free account
+      <PasswordField label="Password" name="password" autoComplete="current-password" enterKeyHint="go" error={errors.password} />
+      <FormFooter error={errors.form}>
+        <button type="submit" className="btn-primary w-full" disabled={busy}>
+          {busy ? "Logging in…" : "Log in"}
         </button>
-      </p>
+        <p className="text-center text-small text-soft">
+          New here?{" "}
+          <button type="button" onClick={onSwitch} className="link">
+            Create a free account
+          </button>
+        </p>
+      </FormFooter>
     </form>
   );
 }
@@ -143,6 +175,7 @@ function RegisterForm({ city, onSwitch }: { city: CityId | null; onSwitch: () =>
     <form
       noValidate
       className="space-y-4"
+      onKeyDown={nextFieldOnEnter}
       onSubmit={(event) =>
         submit(
           event,
@@ -154,41 +187,49 @@ function RegisterForm({ city, onSwitch }: { city: CityId | null; onSwitch: () =>
         )
       }
     >
+      {/* The typed fields come one after another (the keyboard stays open), then the city picker, then passwords. */}
       <Field label="Full name" error={errors.name}>
-        {(props) => <input {...props} name="name" autoComplete="name" className="input" />}
+        {(props) => <input {...props} name="name" autoComplete="name" autoCapitalize="words" enterKeyHint="next" className="input" />}
+      </Field>
+      <Field label="Email" error={errors.email}>
+        {(props) => (
+          <input {...props} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} enterKeyHint="next" className="input" />
+        )}
+      </Field>
+      <Field label="Mobile number" hint="For example 0300 1234567" error={errors.phone}>
+        {(props) => <input {...props} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="03XX XXXXXXX" enterKeyHint="next" className="input" />}
       </Field>
       <Field label="City" error={errors.city}>
         {(props) => (
-          <select {...props} name="city" defaultValue={city ?? ""} autoComplete="address-level2" className="input">
-            <option value="" disabled>
-              Choose your city
-            </option>
-            {CITIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
+          <div className="relative">
+            <select {...props} name="city" defaultValue={city ?? ""} autoComplete="address-level2" className="input pr-12">
+              <option value="" disabled>
+                Choose your city
               </option>
-            ))}
-          </select>
+              {CITIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            {/* The arrow says "tap to choose" (the browser's own arrow is hidden to keep the pill shape). */}
+            <Icon name="chevron-down" className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-muted" />
+          </div>
         )}
       </Field>
-      <Field label="Email" error={errors.email}>
-        {(props) => <input {...props} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} className="input" />}
-      </Field>
-      <Field label="Mobile number" hint="For example 0300 1234567" error={errors.phone}>
-        {(props) => <input {...props} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="03XX XXXXXXX" className="input" />}
-      </Field>
-      <PasswordField label="Password" name="password" autoComplete="new-password" hint={`At least ${PASSWORD_MIN} characters.`} error={errors.password} />
-      <PasswordField label="Confirm password" name="confirmPassword" autoComplete="new-password" error={errors.confirmPassword} />
-      <FormError message={errors.form} />
-      <button type="submit" className="btn-primary w-full" disabled={busy}>
-        {busy ? "Creating your account…" : "Create account"}
-      </button>
-      <p className="text-center text-small text-soft">
-        Already have an account?{" "}
-        <button type="button" onClick={onSwitch} className="font-semibold text-primary hover:underline">
-          Log in
+      <PasswordField label="Password" name="password" autoComplete="new-password" enterKeyHint="next" hint={`At least ${PASSWORD_MIN} characters.`} error={errors.password} />
+      <PasswordField label="Confirm password" name="confirmPassword" autoComplete="new-password" enterKeyHint="go" error={errors.confirmPassword} />
+      <FormFooter error={errors.form}>
+        <button type="submit" className="btn-primary w-full" disabled={busy}>
+          {busy ? "Creating your account…" : "Create account"}
         </button>
-      </p>
+        <p className="text-center text-small text-soft">
+          Already have an account?{" "}
+          <button type="button" onClick={onSwitch} className="link">
+            Log in
+          </button>
+        </p>
+      </FormFooter>
     </form>
   );
 }
@@ -219,13 +260,25 @@ function Field({ label, hint, error, children }: { label: string; hint?: string;
   );
 }
 
-function PasswordField({ label, name, autoComplete, hint, error }: { label: string; name: string; autoComplete: string; hint?: string; error?: string }) {
+type PasswordFieldProps = { label: string; name: string; autoComplete: string; enterKeyHint: "next" | "go"; hint?: string; error?: string };
+
+function PasswordField({ label, name, autoComplete, enterKeyHint, hint, error }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   return (
     <Field label={label} hint={hint} error={error}>
       {(props) => (
         <div className="relative">
-          <input {...props} name={name} type={visible ? "text" : "password"} autoComplete={autoComplete} maxLength={72} className="input pr-12" />
+          <input
+            {...props}
+            name={name}
+            type={visible ? "text" : "password"}
+            autoComplete={autoComplete}
+            autoCapitalize="none"
+            spellCheck={false}
+            enterKeyHint={enterKeyHint}
+            maxLength={72}
+            className="input pr-12"
+          />
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}

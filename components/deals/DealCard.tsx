@@ -1,6 +1,6 @@
 "use client";
 
-import { OfferPanel } from "@/components/deals/OfferPanel";
+import { OfferPanel, dealKind } from "@/components/deals/OfferPanel";
 import { Icon } from "@/components/ui/Icon";
 import { LikeButton } from "@/components/ui/LikeButton";
 import { formatCards, formatCities, formatOffer, formatPrice, formatUntil } from "@/lib/format";
@@ -37,11 +37,13 @@ export function DealCard({ deal, liked, searchedCities, myCardIds, cards, onTogg
     <article className="deal-card">
       {/* Room is kept in the tag's top row; the heart sits on the card itself so it stays above the card-wide tap area.
           With Data Saver on, pictures are left out of the list (they still show in the details). */}
-      <OfferPanel deal={deal} showImage={!saver} action={<span className="size-9 shrink-0" aria-hidden="true" />} />
+      <OfferPanel deal={deal} showImage={!saver} action={<span className="size-9 shrink-0 max-sm:hidden" aria-hidden="true" />} />
       <LikeButton className="card-action absolute top-2 right-2 z-10" liked={liked} title={deal.title} onToggle={() => onToggleLike(deal.id)} />
 
-      <div className="flex flex-1 flex-col px-2.5 pt-3 pb-2.5 sm:px-3">
-        <h3 className="truncate text-body leading-snug font-bold text-ink sm:text-[1.0625rem]">
+      {/* Phones: this column sits to the right of the offer, with room kept at the top for the heart. */}
+      <div className="flex min-w-0 flex-1 flex-col py-1.5 pr-1.5 pl-3 sm:px-3 sm:pt-3 sm:pb-2.5">
+        <p className="truncate pr-11 text-caption font-semibold text-muted sm:hidden">{dealKind(deal)}</p>
+        <h3 className="truncate text-body leading-snug font-bold text-ink max-sm:pr-11 sm:text-[1.0625rem]">
           <button
             type="button"
             onClick={() => onOpen(deal)}
@@ -66,7 +68,7 @@ export function DealCard({ deal, liked, searchedCities, myCardIds, cards, onTogg
 
         {/* Every card has this line, so cards in a row line up with no empty gaps. */}
         <p
-          className={`mt-2.5 inline-flex max-w-full items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-caption font-semibold ${
+          className={`mt-2 inline-flex max-w-full items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-caption font-semibold sm:mt-2.5 ${
             deal.cards.length === 0 ? "bg-fill text-soft" : mine ? "bg-save-soft text-save" : "bg-primary-soft text-primary"
           }`}
         >

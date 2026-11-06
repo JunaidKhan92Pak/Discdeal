@@ -91,7 +91,7 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
   return (
     <section
       aria-label="Browse deals"
-      className="mx-auto mt-3 grid min-h-0 w-full max-w-browse flex-1 animate-rise grid-rows-[minmax(0,1fr)] gap-4 lg:mt-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 [@media(max-height:34rem)]:min-h-[26rem]"
+      className="mx-auto mt-3 grid min-h-0 w-full max-w-browse flex-1 animate-rise gap-4 lg:grid-rows-[minmax(0,1fr)] lg:mt-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 [@media(max-height:34rem)]:min-h-[26rem]"
     >
       {/* Desktop: every filter visible at once in a sidebar. Phones and tablets: pills + a Brand sheet below. */}
       <FilterSidebar

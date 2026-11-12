@@ -15,7 +15,7 @@ type BrandListProps = {
 };
 
 /**
- * Pick-one list of brands: "All brands", then every brand A–Z with its count. No "Show all" button: the list
+ * Pick-one list of brands: "All brands", then every brand A–Z (no counts: the list is for choosing, not tallying). No "Show all" button: the list
  * scrolls (in the sidebar, or the phone sheet), and when it is long a search box stays pinned at its top.
  */
 export function BrandList({ brands, selected, onSelect, searchBackground = "bg-glass-strong" }: BrandListProps) {
@@ -28,7 +28,6 @@ export function BrandList({ brands, selected, onSelect, searchBackground = "bg-g
   }
 
   const needle = filter.trim().toLowerCase();
-  const total = brands.reduce((sum, b) => sum + b.count, 0);
   const shown = needle ? brands.filter((b) => b.name.toLowerCase().includes(needle)) : brands;
 
   return (
@@ -45,7 +44,7 @@ export function BrandList({ brands, selected, onSelect, searchBackground = "bg-g
               type="search"
               autoComplete="off"
               dir="auto"
-              placeholder={`Find a brand (${brands.length})`}
+              placeholder="Find a brand"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-muted"
@@ -65,7 +64,6 @@ export function BrandList({ brands, selected, onSelect, searchBackground = "bg-g
             <Icon name="tag" className="size-4" />
           </span>
           <span className="flex-1 truncate">All brands</span>
-          <span className="count">{total}</span>
         </button>
       )}
 
@@ -75,7 +73,6 @@ export function BrandList({ brands, selected, onSelect, searchBackground = "bg-g
             {b.name.charAt(0).toUpperCase()}
           </span>
           <span className="flex-1 truncate">{b.name}</span>
-          <span className="count">{b.count}</span>
         </button>
       ))}
 

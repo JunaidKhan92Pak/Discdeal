@@ -19,8 +19,13 @@ export function QuickSearches({ examples, onPick }: { examples: string[]; onPick
 
   if (!shown) return null;
   return (
-    <div ref={rowRef} className="mx-auto mt-5 flex max-w-search flex-wrap items-center justify-center gap-2 [@media(max-height:40rem)]:hidden">
-      <span className="px-1 text-small text-muted">Try:</span>
+    // Phones: one row you swipe sideways (edge to edge, fading out on the right to show there is more), instead of
+    // three wrapped rows that push everything else down. Larger screens: centred and wrapping, as before.
+    <div
+      ref={rowRef}
+      className="mx-auto mt-5 flex max-w-search items-center gap-2 [@media(max-height:40rem)]:hidden max-sm:-mx-gutter max-sm:overflow-x-auto max-sm:px-gutter max-sm:py-0.5 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:[scrollbar-width:none] sm:flex-wrap sm:justify-center"
+    >
+      <span className="shrink-0 px-1 text-small text-muted">Try:</span>
       {examples.map((example) => (
         <button key={example} type="button" className="chip" dir="auto" onClick={() => onPick(example)}>
           {example}

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import Link from "next/link";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { Header } from "@/components/layout/Header";
+import { Benefits } from "@/components/home/Benefits";
 import { Hero } from "@/components/home/Hero";
 import { QuickSearches } from "@/components/home/QuickSearches";
 import { SearchBar } from "@/components/home/SearchBar";
@@ -96,12 +97,13 @@ export default function Home() {
         <div className="flex h-full flex-col">
           <div className={`min-h-2 transition-[flex-grow] motion-layout ${browsing ? "hidden" : active ? "grow-[.001]" : "grow"}`} />
 
-          {!browsing && <Hero collapsed={active} stats={meta?.stats ?? null} />}
+          {!browsing && <Hero collapsed={active} />}
 
           <div className={browsing ? "pt-3 lg:pt-0" : `transition-[padding] motion-layout ${active ? "pt-4" : "pt-0"}`}>
             <SearchBar
               value={query}
               compact={browsing}
+              examples={meta?.suggestions}
               onChange={handleChange}
               onFocus={() => setFocused(true)}
               onBlur={handleBlur}
@@ -112,6 +114,8 @@ export default function Home() {
             />
             {!browsing && <QuickSearches examples={meta?.suggestions ?? []} onPick={pickExample} />}
           </div>
+
+          {!browsing && <Benefits collapsed={active} />}
 
           {!browsing && <div className="min-h-2 grow" />}
         </div>

@@ -8,7 +8,6 @@ import type { CategoryId } from "@/lib/types";
 type CategoryBarProps = {
   category: CategoryId | null;
   sub: string | null;
-  allCount: number;
   categoryCounts: Record<string, number>;
   subCounts: Record<string, number>;
   onSelectCategory: (category: CategoryId | null) => void;
@@ -22,7 +21,7 @@ const ROW =
  * Categories as one row of Radix toggle pills (one tap filters; arrow keys move between them).
  * Picking a category opens a second, smaller row with its types. Categories with no matches are hidden.
  */
-export function CategoryBar({ category, sub, allCount, categoryCounts, subCounts, onSelectCategory, onSelectSub }: CategoryBarProps) {
+export function CategoryBar({ category, sub, categoryCounts, subCounts, onSelectCategory, onSelectSub }: CategoryBarProps) {
   const visible = CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || c.id === category);
   const selected = CATEGORIES.find((c) => c.id === category);
   const subs = selected?.subcategories.filter((s) => (subCounts[s.id] ?? 0) > 0 || s.id === sub) ?? [];
@@ -41,13 +40,11 @@ export function CategoryBar({ category, sub, allCount, categoryCounts, subCounts
       >
         <ToggleGroup.Item value="all" className="pill">
           All
-          <span className="count">{allCount}</span>
         </ToggleGroup.Item>
         {visible.map((c) => (
           <ToggleGroup.Item key={c.id} value={c.id} className="pill">
             <Icon name={c.icon} className="size-5" />
             {c.short}
-            <span className="count">{categoryCounts[c.id] ?? 0}</span>
           </ToggleGroup.Item>
         ))}
       </ToggleGroup.Root>
@@ -64,7 +61,6 @@ export function CategoryBar({ category, sub, allCount, categoryCounts, subCounts
           {subs.map((s) => (
             <ToggleGroup.Item key={s.id} value={s.id} className="chip">
               {s.label}
-              <span className="count">{subCounts[s.id] ?? 0}</span>
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Dialog } from "radix-ui";
+import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
 import type { MyCards } from "@/hooks/useMyCards";
 import type { Bank, Card } from "@/lib/types";
@@ -23,7 +24,7 @@ export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
   const [picked, setPicked] = useState<string[]>(myCards.cards);
 
   const active = myCards.only && myCards.cards.length > 0;
-  const label = active ? `My cards (${myCards.cards.length})` : "My cards";
+  const saved = myCards.cards.length;
 
   function toggle(id: string) {
     setPicked((list) => (list.includes(id) ? list.filter((c) => c !== id) : [...list, id]));
@@ -42,10 +43,20 @@ export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
         setOpen(next);
       }}
     >
-      <Dialog.Trigger className="pill" data-active={active}>
-        <Icon name="card" className="size-5" />
-        {label}
-      </Dialog.Trigger>
+      {/* Rests as a card icon; spelled out ("My cards 2") only while it is filtering the deals. */}
+      <Hint
+        label="My cards"
+        detail={active ? `Showing deals for your ${saved} card${saved === 1 ? "" : "s"}.` : "Pick the bank cards you have to see only their discounts."}
+      >
+        <Dialog.Trigger className="pill" data-active={active} data-iconic={active ? undefined : ""} aria-label={active ? `My cards: ${saved} selected` : "My cards"}>
+          <Icon name="card" className="size-5" />
+          {active && (
+            <span className="animate-fade">
+              My cards <span className="count">{saved}</span>
+            </span>
+          )}
+        </Dialog.Trigger>
+      </Hint>
 
       <Dialog.Portal>
         <Dialog.Overlay className="overlay" />

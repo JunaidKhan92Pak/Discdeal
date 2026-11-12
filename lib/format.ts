@@ -1,5 +1,5 @@
 import { CHANNELS, CITIES } from "@/lib/taxonomy";
-import type { Card, Channel, CityId, Deal } from "@/lib/types";
+import type { Bank, Card, Channel, CityId, Deal, OtherOffer } from "@/lib/types";
 
 const pkr = new Intl.NumberFormat("en-PK", { maximumFractionDigits: 0 });
 
@@ -83,6 +83,41 @@ export function formatCards(cardIds: string[], cards: Card[], preferred: string[
   const first = cardIds.find((id) => preferred.includes(id)) ?? cardIds[0];
   const name = cards.find((c) => c.id === first)?.short ?? "Bank card";
   return cardIds.length === 1 ? name : `${name} +${cardIds.length - 1}`;
+}
+
+/** A headline inside a sentence: "Up to 50% OFF" → "up to 50% off". Wording like "Buy 1 Get 1" is left alone. */
+export function offerInSentence(offer: string): string {
+  return offer.replace(/^Up to\b/i, "up to").replace(/\bOFF\b/, "off");
+}
+
+/**
+ * Another way to save at the same brand, as words that follow "Also": "30% off with AL Habib Signature",
+ * "a store sale: up to 50% off for everyone".
+ */
+export function formatOtherOffer(other: OtherOffer, cards: Card[], preferred: string[] = []): string {
+  const what = offerInSentence(other.offer);
+  return other.cards.length === 0 ? `a store sale: ${what} for everyone` : `${what} with ${formatCards(other.cards, cards, preferred)}`;
+}
+
+/**
+ * Who gives the discount. A card offer is the bank's ("HBL", "Bank AL Habib"); a store sale is the brand's own.
+ * Several banks on one deal are joined: "HBL & Bank AL Habib".
+ */
+export function formatGiver(deal: Pick<Deal, "brand" | "cards">, cards: Card[], banks: Bank[]): string {
+  if (deal.cards.length === 0) return deal.brand;
+  const ids = [...new Set(deal.cards.map((id) => cards.find((c) => c.id === id)?.bank).filter(Boolean))];
+  const names = ids.map((id) => banks.find((b) => b.id === id)?.short ?? id);
+  return names.length > 0 ? names.join(" & ") : "your bank";
+}
+
+/**
+ * The message that goes with a shared deal, complete on its own in a WhatsApp chat:
+ * "30% OFF at Domino's (Pizza) with HBL Konnect Debit." / "Up to 50% OFF at Breakout (Jeans, T-shirts) for everyone."
+ */
+export function formatShareText(deal: Pick<Deal, "offer" | "discountPct" | "brand" | "cards" | "items" | "title">, cards: Card[]): string {
+  const what = deal.items && deal.items.length > 0 ? deal.items.join(", ") : deal.title;
+  const how = deal.cards.length === 0 ? "for everyone" : `with ${deal.cards.map((id) => cards.find((c) => c.id === id)?.short ?? "a bank card").join(" or ")}`;
+  return `${formatOffer(deal)} at ${deal.brand} (${what}) ${how}.`;
 }
 
 export function cardName(id: string, cards: Card[]): string {

@@ -1,5 +1,6 @@
 "use client";
 
+import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
 
 const STORAGE_KEY = "theme";
@@ -24,9 +25,11 @@ export function ThemeToggle() {
   // Both icons are always rendered; CSS (the `dark` class) decides which one shows,
   // so there is no state, no hydration mismatch and no icon flicker on load.
   return (
-    <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn bg-fill text-ink">
-      <Icon name="sun" className="hidden size-5 dark:block" />
-      <Icon name="moon" className="size-5 dark:hidden" />
-    </button>
+    <Hint label="Light / dark mode">
+      <button type="button" onClick={toggle} aria-label="Toggle light / dark mode" className="icon-btn bg-fill text-ink">
+        <Icon name="sun" className="hidden size-5 dark:block" />
+        <Icon name="moon" className="size-5 dark:hidden" />
+      </button>
+    </Hint>
   );
 }

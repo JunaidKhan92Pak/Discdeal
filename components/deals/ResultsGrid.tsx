@@ -7,7 +7,7 @@ import { DESKTOP, useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import { popIn } from "@/lib/motion";
 import { dataSaver } from "@/lib/network";
-import type { Card, CityId, Deal } from "@/lib/types";
+import type { Bank, Card, CityId, Deal } from "@/lib/types";
 
 type ResultsGridProps = {
   items: Deal[];
@@ -22,6 +22,8 @@ type ResultsGridProps = {
   /** The user's saved cards: deals they get are marked "Your card". */
   myCardIds: string[];
   cards: Card[];
+  /** Bank names, for "By HBL" on card offers. */
+  banks: Bank[];
   /** Scrolls back to the top whenever this changes (a new search or filter). */
   resetKey: string;
   onToggleLike: (id: number) => void;
@@ -30,9 +32,11 @@ type ResultsGridProps = {
   onRetry: () => void;
 };
 
-// Phones: one deal per row, laid out sideways (offer left, details right), so nothing is cut short. Larger screens:
-// as many columns as fit at 14rem or wider: 4 next to the sidebar on a laptop, so the screen is filled with deals.
-const GRID = "grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] sm:gap-4 lg:gap-5";
+// Phones: one deal per row, laid out sideways (offer left, details right), so nothing is cut short. Tablets: as many
+// columns as fit at 15rem or wider. Desktop: 18rem or wider (3 beside the sidebar on a laptop, not 4), with more room
+// between cards, so brand, card and city names are read in full instead of cut off.
+const GRID =
+  "grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] sm:gap-4 lg:grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] lg:gap-6";
 const NOTE = "grid min-h-[50svh] place-items-center content-center gap-4 rounded-card bg-fill px-6 py-10 text-center text-body text-soft lg:h-full lg:min-h-0";
 /** Only the first screenful of new cards is staggered; the rest are off-screen anyway. */
 const ANIMATED = 12;
@@ -128,7 +132,7 @@ export function ResultsGrid(props: ResultsGridProps) {
         <ul ref={listRef} className={`${GRID} transition-opacity ${status === "refreshing" ? "opacity-50" : "opacity-100"}`}>
           {items.map((deal) => (
             <li key={deal.id} data-id={deal.id}>
-              <DealCard deal={deal} liked={likedIds.includes(deal.id)} searchedCities={searchedCities} myCardIds={props.myCardIds} cards={props.cards} onToggleLike={props.onToggleLike} onOpen={props.onOpen} />
+              <DealCard deal={deal} liked={likedIds.includes(deal.id)} searchedCities={searchedCities} myCardIds={props.myCardIds} cards={props.cards} banks={props.banks} onToggleLike={props.onToggleLike} onOpen={props.onOpen} />
             </li>
           ))}
           {loadingMore &&

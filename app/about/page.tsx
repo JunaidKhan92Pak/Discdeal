@@ -11,7 +11,7 @@ import { breadcrumbList, faqPage, graph } from "@/lib/structured-data";
 export async function generateMetadata(): Promise<Metadata> {
   const data = await getPagesData();
   const title = `About ${SITE_NAME}: how it works, sources and FAQ`;
-  const description = `${SITE_NAME} lists ${data.deals.length} live discounts in Pakistan from banks' and brands' own websites, searchable in English, Roman Urdu and Urdu. How it works, where deals come from, and answers to common questions.`;
+  const description = `${SITE_NAME} puts every brand sale and bank card discount in Pakistan in one place (${data.deals.length} live offers), so you no longer check each store's website or your bank's offers page. How it works, store sales vs card offers, your card's benefits, and the app.`;
   return { title, description, alternates: { canonical: "/about" }, openGraph: { title, description, url: "/about" } };
 }
 

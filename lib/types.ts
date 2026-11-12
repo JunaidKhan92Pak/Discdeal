@@ -88,13 +88,24 @@ export type Deal = {
   endsAt: string | null;
   /** Days left, worked out on the server when the data is loaded; null = ongoing. Expired deals are never sent. */
   endsInDays: number | null;
-  /** Cards that get this deal (Card ids). Empty = no card needed. */
+  /** Cards that get this deal (Card ids). Empty = a store sale: the brand's own discount, for everyone. */
   cards: string[];
+  /**
+   * Other ways to save at the same brand that work differently: a store sale beside a card offer, or another card
+   * ("25% with AL Habib Platinum" next to "30% with AL Habib Signature"). One per card set, biggest first.
+   * Worked out on the server (lib/server/catalog.ts); missing when there are none.
+   */
+  otherOffers?: OtherOffer[];
   /** Cities with a branch that honours the deal. Empty = nationwide. */
   cities: CityId[];
   channels: Channel[];
-  /** Extra search words (dishes, products …) that are not in the title. */
+  /** Extra search words (dishes, products …) that are not in the title. Server only: sent to the browser empty. */
   tags: string[];
+  /**
+   * What the discount is on, for people to read: "Pizza", "Jeans · T-shirts", "Women's heels" (at most three).
+   * Made from `tags` on the server (lib/items.ts); missing when the tags add nothing to the title.
+   */
+  items?: string[];
   /** Shown as the offer picture when no `image` URL is provided. */
   icon: IconName;
   /** Optional real product/offer image URL. */
@@ -105,7 +116,17 @@ export type Deal = {
   checkedAt: string;
 };
 
-export type SortKey = "relevance" | "discount" | "ending" | "price";
+/** A short pointer from one deal to another at the same brand (see Deal.otherOffers). */
+export type OtherOffer = {
+  id: number;
+  /** The other deal's headline, as on its card: "30% OFF", "Up to 50% OFF". */
+  offer: string;
+  discountPct: number;
+  /** Empty = a store sale. */
+  cards: string[];
+};
+
+export type SortKey ="relevance" | "discount" | "ending" | "price";
 
 /** Everything the deals API accepts. Built by the browser (lib/query.ts), validated again on the server. */
 export type DealQuery = {

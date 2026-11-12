@@ -17,7 +17,29 @@ export function aboutFaq(data: PagesData): { question: string; answer: string }[
   return [
     {
       question: `What is ${SITE_NAME}?`,
-      answer: `${SITE_NAME} is a free website that finds discounts and deals in Pakistan in one search. As of ${formatDate(data.asOf)} it lists ${data.deals.length} live offers from ${brands} brands in ${cities} cities: bank-card discounts and brand sales on ${categories.join(", ")}.`,
+      answer: `${SITE_NAME} is a free website that puts every discount in Pakistan in one place: the sales brands run themselves, and the discounts banks give on their debit and credit cards. As of ${formatDate(data.asOf)} it lists ${data.deals.length} live offers from ${brands} brands in ${cities} cities, on ${categories.join(", ")}.`,
+    },
+    {
+      question: `Why use ${SITE_NAME} instead of checking stores and banks myself?`,
+      answer:
+        "Because the offers are spread everywhere: each brand announces its sale on its own website, and each bank keeps its card discounts on its own offers page. Finding the best price meant visiting them one by one. " +
+        `${SITE_NAME} collects them for you, so one search shows every brand's sale and every card's discount for what you want, with where it works and until when.`,
+    },
+    {
+      question: "What is the difference between a store sale and a bank card offer?",
+      answer:
+        "A store sale is the brand's own discount: the price is already reduced, and anyone gets it however they pay. A bank card offer is given by a bank: you get it only when you pay with that bank's card. " +
+        `On ${SITE_NAME} every deal says which one it is ("By Breakout" or "By HBL") and, for card offers, exactly which card to pay with. When a brand has both, the deal shows the other one too. Whether they combine on one bill is up to the store, so please ask.`,
+    },
+    {
+      question: "How do I see what my own bank card gets me?",
+      answer:
+        `Tap "My cards" above the results and tick the cards you have. ${SITE_NAME} then shows only the deals your cards get, marked "Your card", so you can see all the benefits of the card in your wallet at once. Only the card's name is saved, on your own phone.`,
+    },
+    {
+      question: `Can I download ${SITE_NAME} as an app?`,
+      answer:
+        `Yes, free and without an app store. On the start screen tap "Download the app": on Android and in Chrome it installs in one tap; on iPhone, tap Share in Safari, then "Add to Home Screen". It then opens from your home screen like any other app.`,
     },
     {
       question: `How do I search on ${SITE_NAME}?`,
@@ -26,7 +48,7 @@ export function aboutFaq(data: PagesData): { question: string; answer: string }[
     },
     {
       question: "Which bank cards are covered?",
-      answer: `Currently: ${cards}. ${noCard} more deals need no bank card at all (for example clothing-brand sales). More banks are being added.`,
+      answer: `Currently: ${cards}. Another ${noCard} deals are brands' own sales, open to everyone whatever card or cash you pay with. More banks are being added.`,
     },
     {
       question: "Where do the deals come from, and are they accurate?",

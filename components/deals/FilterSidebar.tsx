@@ -9,11 +9,10 @@ import { CATEGORIES } from "@/lib/taxonomy";
 import type { BrandFacet, CategoryId } from "@/lib/types";
 
 type FilterSidebarProps = {
-  /** False until the first results arrive; until then every category is listed without counts. */
+  /** False until the first results arrive; until then every category is listed (empty ones are hidden after). */
   ready: boolean;
   category: CategoryId | null;
   sub: string | null;
-  allCount: number;
   categoryCounts: Record<string, number>;
   subCounts: Record<string, number>;
   onSelectCategory: (category: CategoryId | null) => void;
@@ -28,11 +27,11 @@ type FilterSidebarProps = {
 
 /**
  * Desktop filters, all visible at once (on phones the same filters are pills and a Brand sheet):
- * categories with their types opening underneath, then brands. One choice per level, with counts.
+ * categories with their types opening underneath, then brands. One choice per level; no counts, to keep it calm.
  * Counts are faceted: picking a brand shows only its categories, picking a category only its brands.
  */
 export function FilterSidebar(props: FilterSidebarProps) {
-  const { ready, category, sub, allCount, categoryCounts, subCounts, brands, brand, brandScope } = props;
+  const { ready, category, sub, categoryCounts, subCounts, brands, brand, brandScope } = props;
   const visible = ready ? CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || c.id === category) : CATEGORIES;
   const scrollRef = useRef<HTMLElement>(null);
   // The whole sidebar scrolls (smoothly) as one: categories, then every brand. No "Show all" button.
@@ -50,7 +49,6 @@ export function FilterSidebar(props: FilterSidebarProps) {
         <button type="button" className="list-row" data-quiet aria-pressed={category === null} onClick={() => props.onSelectCategory(null)}>
           <Icon name="sparkles" className="size-5 shrink-0" />
           <span className="flex-1 truncate">All deals</span>
-          {ready && <span className="count">{allCount}</span>}
         </button>
 
         {visible.map((c) => {
@@ -67,7 +65,6 @@ export function FilterSidebar(props: FilterSidebarProps) {
               >
                 <Icon name={c.icon} className="size-5 shrink-0" />
                 <span className={`flex-1 truncate ${active ? "font-semibold" : ""}`}>{c.label}</span>
-                {ready && <span className="count">{categoryCounts[c.id] ?? 0}</span>}
               </button>
 
               {subs.length > 1 && (
@@ -81,7 +78,6 @@ export function FilterSidebar(props: FilterSidebarProps) {
                       onClick={() => props.onSelectSub(s.id === sub ? null : s.id)}
                     >
                       <span className="flex-1 truncate">{s.label}</span>
-                      <span className="count">{subCounts[s.id] ?? 0}</span>
                     </button>
                   ))}
                 </div>

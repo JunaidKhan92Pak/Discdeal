@@ -44,6 +44,15 @@ const PATHS = {
   pin: <><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   check: <path d="m5 12 5 5L20 7" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  download: <><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>,
+  // Safari's own Share mark (arrow out of a box), only for "how to add to the home screen" on iPhone.
+  "ios-share": <><path d="M12 3v12" /><path d="m8 7 4-4 4 4" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></>,
+  "plus-square": <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M12 8v8M8 12h8" /></>,
+  // The curved "forward" arrow, as on WhatsApp's forward button: send this on to someone.
+  // (An arrow out of a box read as "upload"; three linked dots read as "connections".)
+  share: <><path d="m14 5 6 6-6 6" /><path d="M20 11H10a6 6 0 0 0-6 6v2" /></>,
+  store: <><path d="M3 9 4.5 4h15L21 9" /><path d="M4 9v11h16V9" /><path d="M3 9h18" /><path d="M9.5 20v-5.5h5V20" /></>,
   copy: <><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5" /></>,
   "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-down": <path d="m6 9 6 6 6-6" />,

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Tooltip } from "radix-ui";
 import { MotionReady } from "@/components/motion/MotionReady";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TAGLINE, jsonLd, siteUrl } from "@/lib/site";
 import "lenis/dist/lenis.css";
@@ -20,13 +21,22 @@ const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&
  */
 const MOTION_INIT = `try{var d=document.documentElement;if(!matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("motion-ok");setTimeout(function(){if(!window.__motionReady)d.classList.add("motion-fallback")},4000)}}catch(e){}`;
 
-const TITLE = `${SITE_NAME}: discounts and bank-card deals in Pakistan`;
+/**
+ * Chrome and Android offer to install the app with a `beforeinstallprompt` event, usually right after load, often
+ * before React has started. This keeps it (and stops the browser's own small banner) so the "Download the app"
+ * button can show the install prompt when tapped (lib/install.ts).
+ */
+const INSTALL_INIT = `addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e});`;
+
+const TITLE = `${SITE_NAME}: every brand sale and bank card discount in Pakistan`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: TITLE, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  // Added to an iPhone's home screen, it opens full screen like an app, under its own name.
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
   keywords: SITE_KEYWORDS,
   category: "shopping",
   alternates: { canonical: "/" },
@@ -93,12 +103,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Runs synchronously before first paint so the saved theme never flashes. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT + MOTION_INIT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT + MOTION_INIT + INSTALL_INIT }} />
         <SiteStructuredData />
       </head>
       <body className={`${sans.variable} ${serif.variable} antialiased`}>
         <MotionReady />
-        {children}
+        {/* One provider for every Hint: a short wait before the first one, then the next shows at once. */}
+        <Tooltip.Provider delayDuration={350} skipDelayDuration={500}>
+          {children}
+        </Tooltip.Provider>
         {/* Vercel: visitors and page views, and real-user speed (Core Web Vitals). Both send nothing in development. */}
         <Analytics />
         <SpeedInsights />

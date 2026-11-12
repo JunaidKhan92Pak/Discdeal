@@ -99,7 +99,6 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
         ready={page !== null}
         category={filters.category}
         sub={filters.sub}
-        allCount={page?.allCount ?? 0}
         categoryCounts={page?.categoryCounts ?? {}}
         subCounts={page?.subCounts ?? {}}
         onSelectCategory={filters.selectCategory}
@@ -120,7 +119,6 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
           <CategoryBar
             category={filters.category}
             sub={filters.sub}
-            allCount={page?.allCount ?? 0}
             categoryCounts={page?.categoryCounts ?? {}}
             subCounts={page?.subCounts ?? {}}
             onSelectCategory={filters.selectCategory}
@@ -160,8 +158,9 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
             emptyMessage={emptyMessage}
             likedIds={liked}
             searchedCities={searchedCities}
-          myCardIds={myCards.cards}
-          cards={meta?.cards ?? []}
+            myCardIds={myCards.cards}
+            cards={meta?.cards ?? []}
+            banks={meta?.banks ?? []}
             resetKey={`${filters.category}-${filters.sub}-${filters.brand?.id}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
             onToggleLike={toggle}
             onOpen={openDeal}
@@ -172,7 +171,7 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
       </div>
 
       {selected && (
-        <DealModal deal={selected} myCardIds={myCards.cards} cards={meta?.cards ?? []} open={detailsOpen} returnFocusTo={openerRef} liked={liked.includes(selected.id)} onToggleLike={toggle} onOpenChange={setDetailsOpen} onShowBrand={showBrand} />
+        <DealModal deal={selected} myCardIds={myCards.cards} cards={meta?.cards ?? []} banks={meta?.banks ?? []} open={detailsOpen} returnFocusTo={openerRef} liked={liked.includes(selected.id)} onToggleLike={toggle} onOpenChange={setDetailsOpen} onShowBrand={showBrand} />
       )}
     </section>
   );

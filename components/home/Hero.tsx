@@ -2,21 +2,17 @@
 
 import { useLayoutEffect, useRef } from "react";
 import { EASE, gsap, reducedMotion, sleepWhenIdle } from "@/lib/motion";
-import type { CatalogStats } from "@/lib/types";
 
 type HeroProps = {
   collapsed: boolean;
-  /** Live numbers from the data (null while loading), so the claim on the page is always true. */
-  stats: CatalogStats | null;
 };
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
 /**
- * The welcome: a live-numbers pill, the headline and one line on how to search. Each part rises in turn (GSAP) when
- * the screen opens and again when coming back from results. Starts hidden in CSS (`data-hero`) so nothing flashes.
+ * The welcome: a live pill (what DiscDeal finds), the promise as the headline, and one line on what it saves you.
+ * Each part rises in turn (GSAP) when the screen opens and again when coming back from results.
+ * Starts hidden in CSS (`data-hero`) so nothing flashes.
  */
-export function Hero({ collapsed, stats }: HeroProps) {
+export function Hero({ collapsed }: HeroProps) {
   const rootRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -44,18 +40,22 @@ export function Hero({ collapsed, stats }: HeroProps) {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-save opacity-60" />
             <span className="relative inline-flex size-2 rounded-full bg-save" />
           </span>
-          {stats ? `${plural(stats.deals, "live discount")} · ${plural(stats.cards, "bank card")} · ${`${stats.cities} ${stats.cities === 1 ? "city" : "cities"}`}` : "Live discounts across Pakistan"}
+          {/* No numbers: the two kinds of discount the site finds, with a pulse that says "live". */}
+          Live store sales &amp; bank card offers
         </p>
-        <h1 className="mx-auto mt-5 max-w-hero text-display">
+        {/* The promise: both kinds of discount (the brands' own sales, the banks' card offers), in one place. */}
+        <h1 className="mx-auto mt-5 max-w-hero text-display text-balance">
           <span data-hero="line" className="block">
-            Find the deal.
+            Every sale, every card.
           </span>
           <em data-hero="line" className="block pb-[0.08em] font-serif font-normal tracking-normal text-primary">
-            Skip the full price.
+            All in one place.
           </em>
         </h1>
-        <p data-hero="copy" className="mx-auto mt-5 mb-7 max-w-copy text-body text-soft sm:text-lg [@media(max-height:40rem)]:hidden">
-          Discounts from stores across Pakistan. Type what you want, in English, Roman Urdu or اردو.
+        {/* What that saves you: no going site to site, and knowing what your own cards get you. */}
+        <p data-hero="copy" className="mx-auto mt-5 mb-7 max-w-[34rem] text-body text-balance text-soft sm:text-lg [@media(max-height:40rem)]:hidden">
+          No more checking each store&apos;s website or your bank&apos;s offers page. Search once, and see what the
+          cards in your wallet get you.
         </p>
       </section>
     </div>

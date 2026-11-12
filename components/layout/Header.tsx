@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AccountButton } from "@/components/auth/AccountButton";
+import { InstallButton } from "@/components/home/InstallButton";
 import { Select } from "@/components/ui/Select";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { CITIES } from "@/lib/taxonomy";
 import type { CityId } from "@/lib/types";
 
 const CITY_OPTIONS: { value: CityId | "all"; label: string }[] = [{ value: "all", label: "All Pakistan" }, ...CITIES.map((c) => ({ value: c.id, label: c.label }))];
+const cityLabel = (id: CityId) => CITIES.find((c) => c.id === id)?.label ?? id;
 
 type HeaderProps = {
   city: CityId | null;
@@ -49,8 +51,18 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
       </Link>
 
       <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 ${browsing ? "lg:col-start-3" : ""}`}>
-        {!browsing && <span className="hidden rounded-full bg-fill px-3 py-1.5 text-caption font-medium text-soft md:block">New deals every day</span>}
-        <Select label="Your city" icon="pin" value={city ?? "all"} options={CITY_OPTIONS} onChange={(value) => onCityChange(value === "all" ? null : value)} />
+        {/* The start screen offers the app (hidden once installed); while browsing, the header is for searching. */}
+        {!browsing && <InstallButton />}
+        {/* "All Pakistan" is the starting point, so it rests as a pin; a chosen city is always spelled out. */}
+        <Select
+          label="Your city"
+          icon="pin"
+          compact={city === null}
+          hint={{ label: "Your city", detail: city ? `Showing deals in ${cityLabel(city)}` : "Showing deals from all of Pakistan" }}
+          value={city ?? "all"}
+          options={CITY_OPTIONS}
+          onChange={(value) => onCityChange(value === "all" ? null : value)}
+        />
         <AccountButton />
         <ThemeToggle />
       </div>

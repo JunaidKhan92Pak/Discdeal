@@ -99,7 +99,9 @@
 
   /* Type scale, sized for older eyes too: body is 16px, the smallest text is 13px.
      text-display, text-page, text-title, text-headline, text-offer, text-price, text-body, text-small, text-caption, text-overline */
-  --text-display: clamp(2.5rem, min(10vw, 14svh), 6.5rem);
+  /* The start screen's headline ("Every sale, every card."): sized so its longer first line stays on one line
+     from a phone (2.25rem) to a wide desktop (5.5rem), and never taller than the screen allows (svh). */
+  --text-display: clamp(2.25rem, min(8vw, 12svh), 5.5rem);
   --text-display--line-height: 0.95;
   --text-display--letter-spacing: -0.04em;
   --text-display--font-weight: 600;
@@ -162,6 +164,12 @@
   --animate-rise: rise 0.3s var(--ease-smooth) backwards;
   --animate-fade: fade 0.3s ease backwards;
   --animate-pop: pop 0.3s var(--ease-smooth) backwards;
+  /* The text cursor after the self-typing examples in the search box */
+  --animate-caret: caret 1.05s step-end infinite;
+
+  @keyframes caret {
+    50% { opacity: 0; }
+  }
 
   @keyframes fade {
     from { opacity: 0; }

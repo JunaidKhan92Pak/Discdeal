@@ -1,6 +1,7 @@
 "use client";
 
 import { Select as RadixSelect } from "radix-ui";
+import { Hint } from "@/components/ui/Hint";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 type SelectProps<T extends string> = {
@@ -12,22 +13,39 @@ type SelectProps<T extends string> = {
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  /** Rest as just the icon (the value is still read out to screen readers). Needs `icon`. */
+  compact?: boolean;
+  /** Shown on hover / keyboard focus, e.g. { label: "Sort", detail: "Best match" }. */
+  hint?: { label: string; detail?: string };
 };
 
 /** A pill that opens a Radix Select list: big rows, a tick on the current choice, full keyboard and screen-reader support. */
-export function Select<T extends string>({ label, icon, prefix, value, options, onChange }: SelectProps<T>) {
-  return (
-    <RadixSelect.Root value={value} onValueChange={(next) => onChange(next as T)}>
-      <RadixSelect.Trigger aria-label={label} className="pill">
-        {icon && <Icon name={icon} className="size-4 text-primary" />}
-        {prefix && <span className="hidden font-medium text-muted sm:inline">{prefix}</span>}
-        <span className="max-w-36 truncate">
-          <RadixSelect.Value />
-        </span>
+export function Select<T extends string>({ label, icon, prefix, value, options, onChange, compact = false, hint }: SelectProps<T>) {
+  const iconOnly = compact && icon;
+  const trigger = (
+    <RadixSelect.Trigger aria-label={label} className="pill" data-iconic={iconOnly ? "" : undefined}>
+      {icon && <Icon name={icon} className={iconOnly ? "size-5" : "size-4 text-primary"} />}
+      {prefix && !iconOnly && <span className="hidden font-medium text-muted sm:inline">{prefix}</span>}
+      <span className={iconOnly ? "sr-only" : "max-w-36 animate-fade truncate"}>
+        <RadixSelect.Value />
+      </span>
+      {!iconOnly && (
         <RadixSelect.Icon>
           <Icon name="chevron-down" className="size-4 text-muted" />
         </RadixSelect.Icon>
-      </RadixSelect.Trigger>
+      )}
+    </RadixSelect.Trigger>
+  );
+
+  return (
+    <RadixSelect.Root value={value} onValueChange={(next) => onChange(next as T)}>
+      {hint ? (
+        <Hint label={hint.label} detail={hint.detail}>
+          {trigger}
+        </Hint>
+      ) : (
+        trigger
+      )}
 
       <RadixSelect.Portal>
         <RadixSelect.Content position="popper" sideOffset={6} align="end" className="menu animate-pop">

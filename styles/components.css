@@ -56,7 +56,7 @@
 @utility deal-card {
   @apply relative flex h-full flex-col rounded-card bg-surface p-1.5 transition-[translate,background-color];
   content-visibility: auto;
-  contain-intrinsic-size: auto 17rem;
+  contain-intrinsic-size: auto 19rem;
   /* Phones: one card per row, sideways: the offer on the left, the details beside it */
   @media (width < 40rem) {
     flex-direction: row;
@@ -215,6 +215,18 @@
   }
   &[data-state="open"] {
     @apply bg-hover;
+  }
+  /* Resting as just an icon (and maybe a count): a 44px circle. The label appears once the filter is on. */
+  &[data-iconic] {
+    @apply px-3;
+  }
+}
+
+/* The hint that explains an icon on hover or keyboard focus (Hint): small, inverse, quick to appear and to go */
+@utility hint {
+  @apply z-50 max-w-64 animate-fade rounded-xl bg-ink px-3 py-2 text-caption text-bg select-none;
+  &[data-state="closed"] {
+    animation: fade-out 0.15s ease forwards;
   }
 }
 

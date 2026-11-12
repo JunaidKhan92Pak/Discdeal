@@ -24,10 +24,12 @@ export function DealRow({ deal, cards, linkBrand = true }: { deal: Deal; cards: 
           )}
           <span className="font-normal text-soft">: {deal.title}</span>
         </h3>
+        {deal.items && deal.items.length > 0 && <p className="mt-1 text-small font-semibold text-ink">{deal.items.join(" · ")}</p>}
         <ul className="mt-3 flex flex-wrap gap-2 text-caption font-medium text-soft">
-          <li className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-primary">
-            <Icon name="card" className="size-4" />
-            {deal.cards.length ? deal.cards.map((id) => cardName(id, cards)).join(" or ") : "No card needed"}
+          {/* Same words as the app's deal cards: a store sale is for everyone; a card offer names the card. */}
+          <li className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${deal.cards.length ? "bg-primary-soft text-primary" : "bg-fill text-ink"}`}>
+            <Icon name={deal.cards.length ? "card" : "tag"} className="size-4" />
+            {deal.cards.length ? `Pay with ${deal.cards.map((id) => cardName(id, cards)).join(" or ")}` : `By ${deal.brand} · pay any way, for everyone`}
           </li>
           <li className="inline-flex items-center gap-1.5 rounded-full bg-fill px-3 py-1.5">
             <Icon name="pin" className="size-4" />

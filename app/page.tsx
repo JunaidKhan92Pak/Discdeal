@@ -127,11 +127,11 @@ export default function Home() {
       <footer className={`shrink-0 justify-center pt-3 text-caption text-muted [@media(max-height:34rem)]:hidden ${browsing ? "hidden sm:flex" : "flex"}`}>
         Prices and offers may change. Please check with the store.
         <span className="mx-2" aria-hidden="true">·</span>
-        <Link href="/deals" className="hover:text-primary hover:underline">
+        <Link href="/deals" className="quiet-link hover:underline">
           All deals
         </Link>
         <span className="mx-2" aria-hidden="true">·</span>
-        <Link href="/about" className="hover:text-primary hover:underline">
+        <Link href="/about" className="quiet-link hover:underline">
           About
         </Link>
       </footer>

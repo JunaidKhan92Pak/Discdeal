@@ -7,6 +7,7 @@ const MAX_LIMIT = 48;
 const MAX_OFFSET = 2000;
 const MAX_QUERY_LENGTH = 120;
 const MAX_IDS = 200;
+const MAX_BRANDS = 30;
 
 const CITY_IDS = new Set<string>(CITIES.map((c) => c.id));
 const CATEGORY_IDS = new Set<string>(CATEGORIES.map((c) => c.id));
@@ -19,15 +20,21 @@ export function toSearchParams(query: DealQuery): URLSearchParams {
   const params = new URLSearchParams();
   if (query.q) params.set("q", query.q);
   if (query.city) params.set("city", query.city);
-  if (query.category) params.set("cat", query.category);
-  if (query.sub) params.set("sub", query.sub);
-  if (query.brand) params.set("brand", query.brand);
+  // Sorted, so picking A then B and B then A ask the same question (one cache entry, here and on the server).
+  if (query.categories.length > 0) params.set("cat", [...query.categories].sort().join(","));
+  if (query.subs.length > 0) params.set("sub", [...query.subs].sort().join(","));
+  if (query.brands.length > 0) params.set("brand", [...query.brands].sort().join(","));
   if (query.cards) params.set("cards", query.cards.join(","));
   if (query.sort !== "relevance") params.set("sort", query.sort);
   if (query.ids) params.set("ids", query.ids.join(","));
   if (query.offset > 0) params.set("offset", String(query.offset));
   if (query.limit !== PAGE_SIZE) params.set("limit", String(query.limit));
   return params;
+}
+
+/** "a,b,a" → ["a", "b"]: a comma list from the URL, de-duplicated and sorted so the same choice is the same URL. */
+function list(value: string | null): string[] {
+  return value ? [...new Set(value.split(",").filter(Boolean))].sort() : [];
 }
 
 function clampInt(value: string | null, fallback: number, min: number, max: number): number {
@@ -38,11 +45,11 @@ function clampInt(value: string | null, fallback: number, min: number, max: numb
 /** Turns untrusted URL params into a safe DealQuery: unknown ids are dropped, numbers are clamped, text is capped. */
 export function parseDealQuery(params: URLSearchParams): DealQuery {
   const city = params.get("city");
-  const category = params.get("cat");
-  const validCategory = category && CATEGORY_IDS.has(category) ? (category as CategoryId) : null;
-  const sub = params.get("sub");
-  const validSub = validCategory && sub && CATEGORIES.find((c) => c.id === validCategory)?.subcategories.some((s) => s.id === sub) ? sub : null;
-  const brand = params.get("brand");
+  const categories = list(params.get("cat")).filter((id): id is CategoryId => CATEGORY_IDS.has(id));
+  // A type only counts under a category that is chosen.
+  const allowedSubs = new Set(CATEGORIES.filter((c) => categories.includes(c.id)).flatMap((c) => c.subcategories.map((s) => s.id)));
+  const subs = list(params.get("sub")).filter((id) => allowedSubs.has(id));
+  const brands = list(params.get("brand")).filter(isSlug).slice(0, MAX_BRANDS);
   const cards = params.get("cards");
   const sort = params.get("sort");
   const ids = params.get("ids");
@@ -50,9 +57,9 @@ export function parseDealQuery(params: URLSearchParams): DealQuery {
   return {
     q: (params.get("q") ?? "").slice(0, MAX_QUERY_LENGTH),
     city: city && CITY_IDS.has(city) ? (city as CityId) : null,
-    category: validCategory,
-    sub: validSub,
-    brand: brand && isSlug(brand) ? brand : null,
+    categories,
+    subs,
+    brands,
     // "cards=" with no valid ids means "my cards" with nothing picked → no deals.
     cards: cards === null ? null : [...new Set(cards.split(",").filter(isSlug))].slice(0, 20),
     sort: sort && SORTS.has(sort) ? (sort as SortKey) : "relevance",

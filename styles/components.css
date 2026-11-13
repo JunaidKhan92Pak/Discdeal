@@ -6,6 +6,7 @@
  */
 
 /* Typography */
+/* Small section label above a list ("CATEGORIES", "BRANDS"): small and grey, so it organises without competing */
 @utility eyebrow {
   @apply text-overline font-semibold text-muted uppercase;
 }
@@ -37,7 +38,7 @@
   @apply duration-300 ease-smooth;
 }
 
-/* Keyboard focus, the same everywhere: a clear blue outline that follows the pill shape */
+/* Keyboard focus, the same everywhere: a clear teal outline that follows the pill shape */
 @utility focus-ring {
   &:focus-visible {
     @apply outline-2 outline-offset-2 outline-primary;
@@ -52,7 +53,8 @@
 }
 
 /* Deal card. Off-screen cards skip layout and paint, so long lists stay fast.
-   Under the mouse it lifts a little and the category icon behind the offer turns upright. */
+   Under the mouse it lifts a little and the category icon behind the offer turns upright: one quiet "this is the one
+   you're on", with no change of colour. */
 @utility deal-card {
   @apply relative flex h-full flex-col rounded-card bg-surface p-1.5 transition-[translate,background-color];
   content-visibility: auto;
@@ -68,14 +70,14 @@
       @apply -translate-y-1;
     }
     &:hover .offer-watermark {
-      @apply rotate-0 scale-110 opacity-[0.14];
+      @apply rotate-0 scale-110 opacity-[0.18];
     }
   }
 }
 
-/* The deal's big green tag (OfferPanel), inset in the card like a ticket */
+/* The deal's big teal tag (OfferPanel), inset in the card like a ticket */
 @utility offer-panel {
-  @apply relative isolate overflow-hidden rounded-panel bg-save-soft text-save;
+  @apply relative isolate overflow-hidden rounded-panel bg-save-soft text-save transition-[background-color,color];
 }
 
 /* The category icon, large and faint, behind the number */
@@ -91,7 +93,7 @@
 
 /* The heart on a card: the same solid look, for the same reason. */
 @utility card-action {
-  @apply bg-surface/85 hover:bg-surface;
+  @apply bg-surface/85 transition-[background-color,color,scale] hover:bg-surface;
 }
 
 /* "UP TO  50%  OFF" */
@@ -109,9 +111,12 @@
   @apply rounded-panel bg-fill;
 }
 
-/* The big search box: a white pill on the page, blue outline while typing */
+/* The big search box: a pale cyan pill on the page, a shade deeper under the mouse, teal outline while typing */
 @utility field {
   @apply flex h-14 items-center gap-2 rounded-field bg-surface py-0 pr-1.5 pl-5 outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color,height] sm:h-16 sm:pl-6;
+  &:hover:not(:focus-within) {
+    @apply bg-primary-soft;
+  }
   &:focus-within {
     @apply outline-primary;
   }
@@ -162,7 +167,7 @@
 @utility icon-btn {
   @apply grid size-tap place-items-center rounded-full text-soft transition-[background-color,color,scale] focus-ring;
   &:hover {
-    @apply bg-hover text-ink;
+    @apply bg-hover;
   }
   &:active {
     @apply scale-95;
@@ -208,6 +213,11 @@
   &[data-active="true"] {
     @apply bg-primary text-on-primary;
   }
+  &[data-state="on"]:hover,
+  &[aria-pressed="true"]:hover,
+  &[data-active="true"]:hover {
+    @apply bg-primary-strong;
+  }
   &[data-state="on"] .count,
   &[aria-pressed="true"] .count,
   &[data-active="true"] .count {
@@ -250,7 +260,9 @@
   }
 }
 
-/* Row in a pick-one list (sidebar, brand list): a full-width pill, tinted when chosen */
+/* Row in a pick-several list (sidebar, brand list): a full-width pill with a grey wash under the mouse.
+   A chosen row only turns bold: the tick box at its end is the one place the brand colour shows, so a list with
+   several rows on stays calm instead of becoming a block of colour. */
 @utility list-row {
   @apply flex min-h-tap w-full items-center gap-3 rounded-chip px-3.5 py-1.5 text-left text-body text-ink transition-[background-color,color];
   &:hover {
@@ -259,16 +271,21 @@
   &:focus-visible {
     @apply outline-2 -outline-offset-2 outline-primary;
   }
-  /* Only a real choice is highlighted; "All …" rows (data-quiet) just turn bold, so a section never has two highlights */
-  &[aria-pressed="true"]:not([data-quiet]) {
-    @apply bg-primary-soft font-semibold text-primary;
-  }
-  &[aria-pressed="true"]:not([data-quiet]) .count {
-    @apply text-primary;
-  }
-  &[aria-pressed="true"][data-quiet] {
+  &[aria-pressed="true"] {
     @apply font-semibold;
   }
+  &[aria-pressed="true"] .check-box {
+    @apply bg-primary text-on-primary;
+  }
+  &:hover .check-box {
+    @apply scale-110;
+  }
+}
+
+/* The tick at the end of a row in a pick-several list (categories, brands): an empty rounded square that fills with
+   the brand colour and shows a tick when chosen, so it is clear that more than one can be on. */
+@utility check-box {
+  @apply grid size-5 shrink-0 place-items-center rounded-md bg-hover text-transparent transition-[background-color,color,scale];
 }
 
 /* Dialogs: a blurred, dimmed backdrop, and a glass panel that is a bottom sheet on phones and a centred box on larger screens.
@@ -356,7 +373,7 @@
 
 /* Text link inside prose and footers */
 @utility link {
-  @apply rounded-sm font-semibold text-primary underline-offset-4 transition-colors hover:underline focus-ring;
+  @apply rounded-sm font-semibold text-primary underline-offset-4 transition-colors hover:text-primary-strong hover:underline focus-ring;
 }
 
 @utility quiet-link {

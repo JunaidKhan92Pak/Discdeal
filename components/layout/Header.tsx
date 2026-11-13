@@ -47,7 +47,9 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
       >
         <span className="grid size-9 place-items-center rounded-full bg-primary pb-0.5 font-bold text-on-primary">d</span>
         {/* The word needs room: on narrow phones the city, account and theme buttons come first. */}
-        <span className="hidden min-[420px]:inline">discdeal</span>
+        <span className="hidden text-ink min-[420px]:inline">
+          disc<span className="text-primary">deal</span>
+        </span>
       </Link>
 
       <div className={`col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 ${browsing ? "lg:col-start-3" : ""}`}>

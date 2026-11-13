@@ -76,7 +76,7 @@ export function DealCard({ deal, liked, searchedCities, myCardIds, cards, banks,
 
       {/* Phones: this column sits to the right of the offer, with room kept at the top for the heart. */}
       <div className="flex min-w-0 flex-1 flex-col py-1.5 pr-1.5 pl-3 sm:px-4 sm:pt-4 sm:pb-3.5">
-        {/* 1. Who gives it. Blue with a card for a bank; the shop icon for the brand's own sale. */}
+        {/* 1. Who gives it. Teal with a card for a bank; the shop icon for the brand's own sale. */}
         <p className={`flex min-w-0 items-center gap-1.5 text-caption font-bold max-sm:pr-11 sm:text-small ${storeSale ? "text-soft" : "text-primary"}`}>
           <Icon name={storeSale ? "store" : "card"} className="size-4 shrink-0" strokeWidth={2} />
           <span className="truncate">By {giver}</span>

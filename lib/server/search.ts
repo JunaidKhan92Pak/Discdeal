@@ -151,29 +151,40 @@ export function searchDeals(query: DealQuery, catalog: Catalog): DealsPage {
   const pool = matches.filter(
     ({ deal }) => (!query.ids || query.ids.includes(deal.id)) && (!myCards || deal.cards.some((card) => myCards.includes(card))),
   );
-  const inCategory = (deal: Deal) => (!query.category || deal.category === query.category) && (!query.sub || deal.subcategory === query.sub);
-  const inBrand = (deal: Deal) => !query.brand || deal.brandId === query.brand;
+  // Any of the chosen categories; within one, any of its chosen types (or all of them when none of its types is chosen).
+  const subsOf = new Map(CATEGORIES.map((c) => [c.id, c.subcategories.map((s) => s.id).filter((id) => query.subs.includes(id))]));
+  const inCategory = (deal: Deal) => {
+    if (query.categories.length === 0) return true;
+    if (!query.categories.includes(deal.category)) return false;
+    const subs = subsOf.get(deal.category) ?? [];
+    return subs.length === 0 || subs.includes(deal.subcategory);
+  };
+  const inBrand = (deal: Deal) => query.brands.length === 0 || query.brands.includes(deal.brandId);
 
-  // Faceted counts: each filter is counted with all the others applied, but not itself.
+  // Counts: brands are counted with the categories applied (so the brand list follows the ticked categories); categories
+  // are counted with everything except brands (see below).
   const categoryCounts: Record<string, number> = {};
   const subCounts: Record<string, number> = {};
   let allCount = 0;
   const brandFacets = new Map<string, BrandFacet>();
   for (const { deal } of pool) {
-    if (inBrand(deal)) {
-      allCount++;
-      categoryCounts[deal.category] = (categoryCounts[deal.category] ?? 0) + 1;
-      subCounts[deal.subcategory] = (subCounts[deal.subcategory] ?? 0) + 1;
-    }
+    // Categories are counted without the brand filter: they sit above the brand list, so if ticking a brand hid
+    // categories, the brands would jump up under the pointer and the next tick would land on the wrong one.
+    categoryCounts[deal.category] = (categoryCounts[deal.category] ?? 0) + 1;
+    subCounts[deal.subcategory] = (subCounts[deal.subcategory] ?? 0) + 1;
+    if (inBrand(deal)) allCount++;
     if (inCategory(deal)) {
       const facet = brandFacets.get(deal.brandId) ?? { id: deal.brandId, name: deal.brand, count: 0 };
       facet.count++;
       brandFacets.set(deal.brandId, facet);
     }
   }
-  // Keep the chosen brand listed even when nothing matches it right now, so the picker can show and clear it.
-  const chosen = query.brand && !brandFacets.has(query.brand) ? deals.find((d) => d.brandId === query.brand) : undefined;
-  if (chosen) brandFacets.set(chosen.brandId, { id: chosen.brandId, name: chosen.brand, count: 0 });
+  // Keep the chosen brands listed even when nothing matches them right now, so the picker can show and clear them.
+  for (const id of query.brands) {
+    if (brandFacets.has(id)) continue;
+    const chosen = deals.find((d) => d.brandId === id);
+    if (chosen) brandFacets.set(id, { id, name: chosen.brand, count: 0 });
+  }
 
   const filtered = pool.filter(({ deal }) => inBrand(deal) && inCategory(deal));
   filtered.sort(SORTERS[query.sort]);

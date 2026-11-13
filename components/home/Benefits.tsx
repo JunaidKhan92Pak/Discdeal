@@ -1,9 +1,9 @@
 import { Icon, type IconName } from "@/components/ui/Icon";
 
-const BENEFITS: { icon: IconName; tone: string; lead: string; rest: string }[] = [
-  { icon: "store", tone: "text-save", lead: "Brand sales", rest: "open to everyone" },
-  { icon: "card", tone: "text-primary", lead: "Your bank cards", rest: "see what each one gets you" },
-  { icon: "search", tone: "text-soft", lead: "One search", rest: "in English, Roman Urdu or اردو" },
+const BENEFITS: { icon: IconName; lead: string; rest: string }[] = [
+  { icon: "store", lead: "Brand sales", rest: "open to everyone" },
+  { icon: "card", lead: "Your bank cards", rest: "see what each one gets you" },
+  { icon: "search", lead: "One search", rest: "in English, Roman Urdu or اردو" },
 ];
 
 /**
@@ -22,7 +22,9 @@ export function Benefits({ collapsed }: { collapsed: boolean }) {
       <ul className="mx-auto flex max-w-content animate-rise flex-col items-center gap-x-6 gap-y-2.5 overflow-hidden pt-8 [animation-delay:0.9s] sm:flex-row sm:flex-wrap sm:justify-center">
         {BENEFITS.map((b) => (
           <li key={b.lead} className="flex items-center gap-2 text-small text-soft">
-            <Icon name={b.icon} className={`size-4 shrink-0 ${b.tone}`} strokeWidth={2} />
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-primary" aria-hidden="true">
+              <Icon name={b.icon} className="size-3.5" strokeWidth={2.25} />
+            </span>
             <span>
               <strong className="font-semibold text-ink">{b.lead}</strong> {b.rest}
             </span>

@@ -133,12 +133,16 @@ export type DealQuery = {
   q: string;
   /** The user's saved city. A city named in `q` takes priority. null = all of Pakistan. */
   city: CityId | null;
-  category: CategoryId | null;
-  /** A subcategory of `category`. */
-  sub: string | null;
+  /** Only these categories (any of them). Empty = every category. */
+  categories: CategoryId[];
+  /**
+   * Narrows a chosen category to these types. Per category: a category with none of its types listed here shows all
+   * its deals, one with some listed shows only those types. Each must belong to one of `categories`.
+   */
+  subs: string[];
   sort: SortKey;
-  /** Only this brand (a Deal.brandId). null = every brand. */
-  brand: string | null;
+  /** Only these brands (any of them; Deal.brandId). Empty = every brand. */
+  brands: string[];
   /** Only deals these cards get (Card ids; the user's "My cards"). null = no restriction. */
   cards: string[] | null;
   /** Only deals with these ids (the user's liked deals). null = no restriction. */

@@ -284,7 +284,7 @@ function PasswordField({ label, name, autoComplete, enterKeyHint, hint, error }:
             onClick={() => setVisible((v) => !v)}
             aria-label={visible ? "Hide password" : "Show password"}
             aria-pressed={visible}
-            className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-button text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+            className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-button text-muted transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
           >
             <Icon name={visible ? "eye-off" : "eye"} className="size-5" />
           </button>

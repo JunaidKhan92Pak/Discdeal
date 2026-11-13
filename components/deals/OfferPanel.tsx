@@ -11,14 +11,14 @@ type OfferPanelProps = {
   size?: "card" | "lg";
   /** Top-right button over the panel: the close button in the dialog, or an empty spacer on cards. */
   action?: ReactNode;
-  /** False to leave the picture out (Data Saver): the green panel is shown instead. */
+  /** False to leave the picture out (Data Saver): the teal panel is shown instead. */
   showImage?: boolean;
 };
 
 /**
  * The deal's big tag, the first thing the eye lands on. Always the same shape (16:10 on cards), so a row of cards
  * lines up whether or not they have pictures, and nothing jumps while a picture loads.
- *   No picture: the number large in the middle of the money-green panel ("UP TO 50% OFF").
+ *   No picture: the number large in the middle of the money-teal panel ("UP TO 50% OFF").
  *   Picture:    the photo fills the panel and the offer sits on a solid label in its corner, still easy to read.
  * Top-left, what the deal is on ("Pizza, burgers & fast food"). Type scales with the panel's width (container units).
  */
@@ -54,7 +54,7 @@ export function OfferPanel({ deal, size = "card", action, showImage = true }: Of
       {image ? (
         <OfferHeadline
           deal={deal}
-          className={`mt-auto self-start rounded-2xl bg-surface/90 px-3 py-2 ${lg ? "text-[clamp(1.75rem,9cqi,2.75rem)]" : "text-[clamp(1.125rem,11cqi,1.75rem)]"}`}
+          className={`mt-auto self-start rounded-2xl bg-surface/90 px-3 py-2 text-save ${lg ? "text-[clamp(1.75rem,9cqi,2.75rem)]" : "text-[clamp(1.125rem,11cqi,1.75rem)]"}`}
         />
       ) : (
         <div className="flex flex-1 items-center justify-center">

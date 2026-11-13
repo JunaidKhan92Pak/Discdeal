@@ -15,7 +15,7 @@ type DealImageProps = {
 /**
  * A deal's picture, filling its frame (the frame has a fixed shape, so nothing jumps while it loads). It loads only
  * when it is about to scroll into view, fades in once it has arrived, and simply disappears if the link is broken,
- * leaving the green offer panel behind it. Our own pictures are resized and converted (AVIF/WebP); others as-is.
+ * leaving the teal offer panel behind it. Our own pictures are resized and converted (AVIF/WebP); others as-is.
  */
 export function DealImage({ src, sizes, quality }: DealImageProps) {
   const [loaded, setLoaded] = useState(false);

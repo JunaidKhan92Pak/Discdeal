@@ -11,57 +11,62 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------- 1. Palette (switches between light and dark) ----------
- * Calm and easy to read for everyone, students to grandparents. Only 4 colours:
- *   neutrals (warm white + near-black) = almost everything
- *   primary (blue)  = actions, links, "selected"
- *   save    (green) = money saved: "You save Rs …" and the "30% OFF" tag
- *   urgent  (amber) = time running out: "Ends tonight / tomorrow" (always with a clock icon, never colour alone)
- * Fills are translucent ink, so a pill reads the same on the page, on a card or on glass.
- * All text colours pass WCAG AA (4.5:1) on bg and surface in both modes; most pass AAA (7:1).
+ * One brand colour, teal, used in a fixed order so the eye always knows where to go (roughly 60 / 30 / 10):
+ *   60%  page       pure white (dark: pure black). Calm, so the deals stand out.
+ *   30%  surfaces   cards and the search box in a pale cyan; the deal's tag ("30% OFF") one step deeper (panel).
+ *   10%  brand      teal only where it means something: buttons, a ticked box, the selected filter, links, "By HBL".
+ * Text, darkest to lightest:
+ *   ink    deep teal-navy  headings, deal names, prices
+ *   soft   teal-slate      sentences and details
+ *   muted  grey-teal       footnotes, counts, placeholders (greyer than the brand, so it never looks like a link)
+ *   primary teal           links and "By HBL". Section labels are muted; chosen rows are bold, not coloured.
+ * Hover is a quiet grey wash (fill → hover), the same everywhere; it never adds colour, so colour keeps its meaning.
+ * Meaning colours: save (teal) = money saved; urgent (amber) = time running out (always with a clock icon).
+ * All text colours pass WCAG AA (4.5:1) on bg, surface, panel and hover in both modes; most pass AAA (7:1).
  */
 :root {
-  --c-bg: #f3f2ee;
-  --c-surface: #ffffff;
-  --c-panel: #ebe9e3;
-  --c-fill: rgb(28 27 25 / 0.055);
-  --c-hover: rgb(28 27 25 / 0.095);
+  --c-bg: #ffffff;
+  --c-surface: #effcfe;
+  --c-panel: #c5f3fa;
+  --c-fill: rgb(8 51 68 / 0.05);
+  --c-hover: rgb(8 51 68 / 0.09);
   --c-raised: #ffffff;
-  --c-glass: rgb(255 255 255 / 0.72);
-  --c-glass-strong: rgb(250 249 246 / 0.86);
-  --c-scrim: rgb(24 22 18 / 0.28);
-  --c-ink: #1c1b19;
-  --c-soft: #46433d;
-  --c-muted: #66625a;
-  --c-primary: #1d4ed8;
-  --c-primary-strong: #1e40af;
+  --c-glass: rgb(255 255 255 / 0.8);
+  --c-glass-strong: rgb(255 255 255 / 0.92);
+  --c-scrim: rgb(4 30 40 / 0.32);
+  --c-ink: #083344;
+  --c-soft: #2f5866;
+  --c-muted: #4c6b76;
+  --c-primary: #0b6b85;
+  --c-primary-strong: #0a5568;
   --c-on-primary: #ffffff;
-  --c-primary-soft: #e6edfd;
-  --c-save: #166534;
-  --c-save-soft: #e3f3e9;
+  --c-primary-soft: #d9f7fc;
+  --c-save: #0b6b85;
+  --c-save-soft: #c5f3fa;
   --c-urgent: #92400e;
   --c-urgent-soft: #fbeedd;
   color-scheme: light;
 }
 
 .dark {
-  --c-bg: #121110;
-  --c-surface: #1c1b19;
-  --c-panel: #262522;
-  --c-fill: rgb(243 241 236 / 0.07);
-  --c-hover: rgb(243 241 236 / 0.12);
-  --c-raised: rgb(243 241 236 / 0.12);
-  --c-glass: rgb(28 27 25 / 0.7);
-  --c-glass-strong: rgb(36 35 32 / 0.86);
-  --c-scrim: rgb(0 0 0 / 0.5);
-  --c-ink: #f3f1ec;
-  --c-soft: #d0cbc1;
-  --c-muted: #a5a097;
-  --c-primary: #8ab4ff;
-  --c-primary-strong: #b3ceff;
-  --c-on-primary: #0b1838;
-  --c-primary-soft: #1b2640;
-  --c-save: #6dd498;
-  --c-save-soft: #16301f;
+  --c-bg: #000000;
+  --c-surface: #061a1f;
+  --c-panel: #0c2c34;
+  --c-fill: rgb(230 251 255 / 0.06);
+  --c-hover: rgb(230 251 255 / 0.1);
+  --c-raised: rgb(207 250 254 / 0.12);
+  --c-glass: rgb(0 0 0 / 0.72);
+  --c-glass-strong: rgb(4 20 24 / 0.92);
+  --c-scrim: rgb(0 0 0 / 0.6);
+  --c-ink: #e6fbff;
+  --c-soft: #b2d3da;
+  --c-muted: #86a7af;
+  --c-primary: #5fd8ee;
+  --c-primary-strong: #9ae8f5;
+  --c-on-primary: #04262e;
+  --c-primary-soft: #0b3039;
+  --c-save: #67e8f9;
+  --c-save-soft: #0a3540;
   --c-urgent: #f4a94f;
   --c-urgent-soft: #33240f;
   color-scheme: dark;
@@ -156,10 +161,12 @@
   /* Smallest comfortable tap target (WCAG AAA target size): h-tap, size-tap */
   --spacing-tap: 2.75rem;
 
-  /* Motion: every transition is 300 ms on one smooth curve; switched off for people who ask for reduced motion (globals.css) */
-  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Motion: every transition (hover in and out included) is 300 ms on one smooth curve, GSAP's "power3.out"
+     (lib/motion.ts EASE), so CSS hovers and scripted animations move alike: a quick start that glides to rest.
+     Switched off for people who ask for reduced motion (globals.css). */
+  --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
   --default-transition-duration: 300ms;
-  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   /* `backwards`, not `both`: a lingering transform would trap position:fixed modals/sheets inside their parent */
   --animate-rise: rise 0.3s var(--ease-smooth) backwards;
   --animate-fade: fade 0.3s ease backwards;

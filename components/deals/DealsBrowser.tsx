@@ -34,9 +34,9 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
   const { items, page, status, loadingMore, moreFailed, loadMore, retry } = useDeals({
     q: query,
     city,
-    category: filters.category,
-    sub: filters.sub,
-    brand: filters.brand?.id ?? null,
+    categories: filters.categories,
+    subs: filters.subs,
+    brands: filters.brands.map((b) => b.id),
     cards: myCards.only ? myCards.cards : null,
     sort: filters.sort,
     ids: filters.likedOnly ? liked : null,
@@ -46,9 +46,11 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
   const [detailsOpen, setDetailsOpen] = useState(false);
   const openerRef = useRef<HTMLElement | null>(null);
 
-  // The brand list follows the category pills: "Brands with Fast food deals".
-  const category = CATEGORIES.find((c) => c.id === filters.category);
-  const brandScope = category ? (category.subcategories.find((s) => s.id === filters.sub)?.label ?? category.short) : null;
+  // The brand list follows the chosen categories, named by their short labels: "Brands with Food deals",
+  // "… with Food & Fashion deals". Types are left out (the list above shows them), so the line stays short.
+  const scopeNames = CATEGORIES.filter((c) => filters.categories.includes(c.id)).map((c) => c.short);
+  const brandScope = scopeNames.length === 0 ? null : scopeNames.length <= 2 ? scopeNames.join(" & ") : `${scopeNames.length} categories`;
+  const brandNames = filters.brands.length <= 2 ? filters.brands.map((b) => b.name).join(" or ") : `${filters.brands.length} chosen brands`;
 
   function showBrand(deal: Deal) {
     filters.showBrand({ id: deal.brandId, name: deal.brand });
@@ -84,8 +86,8 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
       : "None of your liked deals match these filters."
     : myCards.only
       ? `None of your cards have a deal here${trimmed ? ` for “${trimmed}”` : ""} yet. Choose “Show all deals” in My cards to see everything.`
-      : filters.brand
-      ? `No ${filters.brand.name} deals match${trimmed ? ` “${trimmed}”` : " these filters"}. Choose “All brands” to see more.`
+      : filters.brands.length > 0
+      ? `No deals from ${brandNames} match${trimmed ? ` “${trimmed}”` : " these filters"}. Choose “All brands” to see more.`
       : `No deals found${trimmed ? ` for “${trimmed}”` : ""}. Try another word or category.`;
 
   return (
@@ -97,16 +99,18 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
       <FilterSidebar
         className="hidden lg:flex"
         ready={page !== null}
-        category={filters.category}
-        sub={filters.sub}
+        categories={filters.categories}
+        subs={filters.subs}
         categoryCounts={page?.categoryCounts ?? {}}
         subCounts={page?.subCounts ?? {}}
-        onSelectCategory={filters.selectCategory}
-        onSelectSub={filters.selectSub}
+        onToggleCategory={filters.toggleCategory}
+        onClearCategories={filters.clearCategories}
+        onToggleSub={filters.toggleSub}
         brands={page?.brands ?? []}
-        brand={filters.brand}
+        selectedBrands={filters.brands}
         brandScope={brandScope}
-        onBrand={filters.selectBrand}
+        onToggleBrand={filters.toggleBrand}
+        onClearBrands={filters.clearBrands}
       />
 
       <div className="flex min-h-0 min-w-0 flex-col gap-3">
@@ -117,12 +121,13 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
 
         <div className="empty:hidden lg:hidden">
           <CategoryBar
-            category={filters.category}
-            sub={filters.sub}
+            categories={filters.categories}
+            subs={filters.subs}
             categoryCounts={page?.categoryCounts ?? {}}
             subCounts={page?.subCounts ?? {}}
-            onSelectCategory={filters.selectCategory}
-            onSelectSub={filters.selectSub}
+            onToggleCategory={filters.toggleCategory}
+            onClearCategories={filters.clearCategories}
+            onToggleSub={filters.toggleSub}
           />
         </div>
 
@@ -133,9 +138,10 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
           likedOnly={filters.likedOnly}
           likedCount={liked.length}
           brands={page?.brands ?? []}
-          brand={filters.brand}
+          selectedBrands={filters.brands}
           brandScope={brandScope}
-          onBrand={filters.selectBrand}
+          onToggleBrand={filters.toggleBrand}
+          onClearBrands={filters.clearBrands}
           onSort={filters.setSort}
           onToggleLiked={showLiked}
           myCards={myCards}
@@ -161,7 +167,7 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
             myCardIds={myCards.cards}
             cards={meta?.cards ?? []}
             banks={meta?.banks ?? []}
-            resetKey={`${filters.category}-${filters.sub}-${filters.brand?.id}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
+            resetKey={`${filters.categories.join(",")}-${filters.subs.join(",")}-${filters.brands.map((b) => b.id).join(",")}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
             onToggleLike={toggle}
             onOpen={openDeal}
             onLoadMore={loadMore}

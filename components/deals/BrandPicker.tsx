@@ -10,30 +10,28 @@ import type { BrandFacet } from "@/lib/types";
 type BrandPickerProps = {
   /** Brands in the current results (already narrowed by category, search, city …), A–Z. */
   brands: BrandFacet[];
-  selected: BrandChoice | null;
+  selected: BrandChoice[];
   /** Where the list comes from, for the subtitle: "Food", "Fast food" … null = everything. */
   scope: string | null;
-  onSelect: (brand: BrandChoice | null) => void;
+  onToggle: (brand: BrandChoice) => void;
+  onClear: () => void;
 };
 
 /**
  * Phones and tablets: the "Brand" button and its list in a Radix Dialog (a bottom sheet on phones).
- * On desktop the same list sits in the sidebar instead. Picking a brand closes the sheet.
+ * On desktop the same list sits in the sidebar instead. Several brands can be ticked; the results update behind the
+ * sheet as you tick, and "Done" closes it.
  */
-export function BrandPicker({ brands, selected, scope, onSelect }: BrandPickerProps) {
+export function BrandPicker({ brands, selected, scope, onToggle, onClear }: BrandPickerProps) {
   const [open, setOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  function choose(brand: BrandChoice | null) {
-    onSelect(brand);
-    setOpen(false);
-  }
+  const label = selected.length === 0 ? "Brand" : selected.length === 1 ? selected[0].name : `${selected.length} brands`;
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger className="pill" data-active={selected !== null}>
+      <Dialog.Trigger className="pill" data-active={selected.length > 0}>
         <Icon name="tag" className="size-4" />
-        <span className="max-w-36 truncate">{selected?.name ?? "Brand"}</span>
+        <span className="max-w-36 truncate">{label}</span>
         <Icon name="chevron-down" className="size-4" />
       </Dialog.Trigger>
 
@@ -53,7 +51,7 @@ export function BrandPicker({ brands, selected, scope, onSelect }: BrandPickerPr
           <div className="sheet-handle" aria-hidden="true" />
           <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-3 sm:pt-5">
             <div>
-              <Dialog.Title className="text-title">Choose a brand</Dialog.Title>
+              <Dialog.Title className="text-title">Choose brands</Dialog.Title>
               <Dialog.Description className="mt-0.5 text-small text-soft">
                 {scope ? `Brands with ${scope} deals` : "Brands with deals right now"}
               </Dialog.Description>
@@ -64,7 +62,16 @@ export function BrandPicker({ brands, selected, scope, onSelect }: BrandPickerPr
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-            <BrandList brands={brands} selected={selected} onSelect={choose} />
+            <BrandList brands={brands} selected={selected} onToggle={onToggle} onClear={onClear} />
+          </div>
+
+          <div className="flex gap-2 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {selected.length > 0 && (
+              <button type="button" className="btn-secondary flex-1" onClick={onClear}>
+                Clear
+              </button>
+            )}
+            <Dialog.Close className="btn-primary flex-1">{selected.length > 1 ? `Show ${selected.length} brands` : "Done"}</Dialog.Close>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

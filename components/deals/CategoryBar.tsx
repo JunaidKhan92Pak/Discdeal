@@ -6,62 +6,82 @@ import { CATEGORIES } from "@/lib/taxonomy";
 import type { CategoryId } from "@/lib/types";
 
 type CategoryBarProps = {
-  category: CategoryId | null;
-  sub: string | null;
+  categories: CategoryId[];
+  subs: string[];
   categoryCounts: Record<string, number>;
   subCounts: Record<string, number>;
-  onSelectCategory: (category: CategoryId | null) => void;
-  onSelectSub: (sub: string | null) => void;
+  onToggleCategory: (category: CategoryId) => void;
+  onClearCategories: () => void;
+  onToggleSub: (sub: string) => void;
 };
 
 const ROW =
   "-mx-gutter flex gap-2 overflow-x-auto px-gutter py-1 [scrollbar-width:none] sm:mx-0 sm:px-0.5";
 
+/** The one value that is in `next` but not `prev`, or the other way round: what a tap just changed. */
+function changed(prev: string[], next: string[]): string | undefined {
+  return next.find((v) => !prev.includes(v)) ?? prev.find((v) => !next.includes(v));
+}
+
 /**
- * Categories as one row of Radix toggle pills (one tap filters; arrow keys move between them).
- * Picking a category opens a second, smaller row with its types. Categories with no matches are hidden.
+ * Categories as one row of Radix toggle pills (one tap turns one on or off; several can be on; arrow keys move
+ * between them). "All" clears them. Every chosen category opens its types in a second, smaller row, where several
+ * can be ticked too. Categories with no matches are hidden.
  */
-export function CategoryBar({ category, sub, categoryCounts, subCounts, onSelectCategory, onSelectSub }: CategoryBarProps) {
-  const visible = CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || c.id === category);
-  const selected = CATEGORIES.find((c) => c.id === category);
-  const subs = selected?.subcategories.filter((s) => (subCounts[s.id] ?? 0) > 0 || s.id === sub) ?? [];
+export function CategoryBar({ categories, subs, categoryCounts, subCounts, onToggleCategory, onClearCategories, onToggleSub }: CategoryBarProps) {
+  const visible = CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || categories.includes(c.id));
+  const open = CATEGORIES.filter((c) => categories.includes(c.id))
+    .map((c) => ({ category: c, subs: c.subcategories.filter((s) => (subCounts[s.id] ?? 0) > 0 || subs.includes(s.id)) }))
+    .filter((g) => g.subs.length > 1);
 
   // Nothing to choose (e.g. the search already narrowed it to one category): give the row's space to the deals.
-  if (category === null && visible.length <= 1) return null;
+  if (categories.length === 0 && visible.length <= 1) return null;
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <ToggleGroup.Root
-        type="single"
-        value={category ?? "all"}
-        onValueChange={(value) => onSelectCategory(value && value !== "all" ? (value as CategoryId) : null)}
-        aria-label="Filter by category"
-        className={ROW}
-      >
-        <ToggleGroup.Item value="all" className="pill">
+      <div className={ROW}>
+        <button type="button" className="pill" aria-pressed={categories.length === 0} onClick={onClearCategories}>
           All
-        </ToggleGroup.Item>
-        {visible.map((c) => (
-          <ToggleGroup.Item key={c.id} value={c.id} className="pill">
-            <Icon name={c.icon} className="size-5" />
-            {c.short}
-          </ToggleGroup.Item>
-        ))}
-      </ToggleGroup.Root>
-
-      {selected && subs.length > 1 && (
+        </button>
         <ToggleGroup.Root
-          type="single"
-          value={sub ?? ""}
-          onValueChange={(value) => onSelectSub(value || null)}
-          aria-label={`Filter ${selected.label}`}
+          type="multiple"
+          value={categories}
+          onValueChange={(next) => {
+            const id = changed(categories, next);
+            if (id) onToggleCategory(id as CategoryId);
+          }}
+          aria-label="Filter by category (choose one or more)"
+          className="flex gap-2"
+        >
+          {visible.map((c) => (
+            <ToggleGroup.Item key={c.id} value={c.id} className="pill">
+              <Icon name={c.icon} className="size-5" />
+              {c.short}
+            </ToggleGroup.Item>
+          ))}
+        </ToggleGroup.Root>
+      </div>
+
+      {open.length > 0 && (
+        <ToggleGroup.Root
+          type="multiple"
+          value={subs}
+          onValueChange={(next) => {
+            const id = changed(subs, next);
+            if (id) onToggleSub(id);
+          }}
+          aria-label="Narrow by type (choose one or more)"
           className={`${ROW} animate-fade items-center`}
         >
-          <span className="shrink-0 text-small text-muted">{selected.short}:</span>
-          {subs.map((s) => (
-            <ToggleGroup.Item key={s.id} value={s.id} className="chip">
-              {s.label}
-            </ToggleGroup.Item>
+          {open.map(({ category, subs: shown }) => (
+            <div key={category.id} className="flex shrink-0 items-center gap-2">
+              <span className="shrink-0 text-small text-muted">{category.short}:</span>
+              {shown.map((s) => (
+                <ToggleGroup.Item key={s.id} value={s.id} className="chip">
+                  {s.label}
+                </ToggleGroup.Item>
+              ))}
+            </div>
           ))}
         </ToggleGroup.Root>
       )}

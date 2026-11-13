@@ -26,10 +26,11 @@ type ResultsToolbarProps = {
   likedOnly: boolean;
   likedCount: number;
   brands: BrandFacet[];
-  brand: BrandChoice | null;
+  selectedBrands: BrandChoice[];
   /** What the brand list is narrowed to ("Food", "Fast food"), or null. */
   brandScope: string | null;
-  onBrand: (brand: BrandChoice | null) => void;
+  onToggleBrand: (brand: BrandChoice) => void;
+  onClearBrands: () => void;
   onSort: (sort: SortKey) => void;
   onToggleLiked: () => void;
   myCards: MyCards;
@@ -47,7 +48,7 @@ type ResultsToolbarProps = {
  * results (a filter on, a sort other than the default) shows its label, so what you see is always explained.
  */
 export function ResultsToolbar(props: ResultsToolbarProps) {
-  const { total, status, sort, likedOnly, likedCount, brands, brand, brandScope, onBrand, onSort, onToggleLiked, understood } = props;
+  const { total, status, sort, likedOnly, likedCount, brands, selectedBrands, brandScope, onSort, onToggleLiked, understood } = props;
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Best match";
   const likedDetail = likedCount === 0 ? "Use the heart on any deal to save it here." : `See the ${likedCount} deal${likedCount === 1 ? "" : "s"} you saved.`;
   return (
@@ -73,7 +74,7 @@ export function ResultsToolbar(props: ResultsToolbarProps) {
       <CardPicker myCards={props.myCards} onSave={props.onSaveCards} banks={props.banks} cards={props.cards} />
       {/* On desktop the brand list lives in the sidebar. */}
       <div className="shrink-0 lg:hidden">
-        <BrandPicker brands={brands} selected={brand} scope={brandScope} onSelect={onBrand} />
+        <BrandPicker brands={brands} selected={selectedBrands} scope={brandScope} onToggle={props.onToggleBrand} onClear={props.onClearBrands} />
       </div>
       {/* "Best match" is what everyone expects, so it rests as an icon; any other order is spelled out. */}
       <Select

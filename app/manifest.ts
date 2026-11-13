@@ -16,7 +16,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#0b6b85",
+    // The same white as the page (and the light theme-color in app/layout.tsx), so the installed app's title bar and
+    // splash screen run seamlessly into the page.
+    theme_color: "#ffffff",
     categories: ["shopping", "lifestyle", "food"],
     icons: [
       { src: "/app-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },

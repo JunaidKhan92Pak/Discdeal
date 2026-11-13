@@ -6,13 +6,13 @@ import { CATEGORIES } from "@/lib/taxonomy";
 import type { Deal } from "@/lib/types";
 
 type OfferPanelProps = {
-  deal: Pick<Deal, "offer" | "discountPct" | "category" | "subcategory" | "icon" | "image">;
+  deal: Pick<Deal, "offer" | "discountPct" | "category" | "subcategory" | "icon">;
+  /** The photo to fill the panel. Leave it out for the teal panel with the big number (no photo, or Data Saver). */
+  image?: string;
   /** "card" in the grid, "lg" at the top of the details dialog. */
   size?: "card" | "lg";
   /** Top-right button over the panel: the close button in the dialog, or an empty spacer on cards. */
   action?: ReactNode;
-  /** False to leave the picture out (Data Saver): the teal panel is shown instead. */
-  showImage?: boolean;
 };
 
 /**
@@ -22,10 +22,9 @@ type OfferPanelProps = {
  *   Picture:    the photo fills the panel and the offer sits on a solid label in its corner, still easy to read.
  * Top-left, what the deal is on ("Pizza, burgers & fast food"). Type scales with the panel's width (container units).
  */
-export function OfferPanel({ deal, size = "card", action, showImage = true }: OfferPanelProps) {
+export function OfferPanel({ deal, image, size = "card", action }: OfferPanelProps) {
   const kind = dealKind(deal);
   const lg = size === "lg";
-  const image = showImage ? deal.image : undefined;
 
   return (
     <div

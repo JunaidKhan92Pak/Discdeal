@@ -1,15 +1,34 @@
 "use client";
 
+import { useEffect } from "react";
 import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
 
 const STORAGE_KEY = "theme";
 
+/**
+ * The browser's bar (phones, installed app) is coloured by <meta name="theme-color">, which only follows the device's
+ * light/dark setting. When someone picked the other theme here, colour it like the page instead.
+ */
+function syncThemeColor() {
+  const color = getComputedStyle(document.body).backgroundColor;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", color));
+}
+
 export function ThemeToggle() {
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(STORAGE_KEY)) syncThemeColor();
+    } catch {}
+  }, []);
+
   function toggle() {
     const root = document.documentElement;
     const next = !root.classList.contains("dark");
-    const apply = () => root.classList.toggle("dark", next);
+    const apply = () => {
+      root.classList.toggle("dark", next);
+      syncThemeColor();
+    };
 
     // A view transition cross-fades one snapshot of the page, so it costs the same with 5 deals or 500
     // (no per-element transitions) and colours that cannot transition (translucent glass) fade like everything else.

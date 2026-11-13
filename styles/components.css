@@ -121,10 +121,10 @@
     @apply outline-primary;
   }
   /* Once results show: slimmer, and it sits in the header row on desktop */
-  &[data-compact="true"] {
+  &[data-variant="bar"] {
     @apply h-12 sm:h-12;
   }
-  &[data-compact="true"] .search-btn {
+  &[data-variant="bar"] .search-btn {
     @apply h-9 min-w-9 sm:h-9 sm:min-w-9;
   }
 }
@@ -232,6 +232,14 @@
   }
 }
 
+/* "Skip to content": the first thing a keyboard reaches. Hidden until focused, then a pill at the top-left. */
+@utility skip-link {
+  @apply sr-only;
+  &:focus-visible {
+    @apply not-sr-only fixed top-3 left-3 z-[100] rounded-full bg-primary px-5 py-3 text-body font-semibold text-on-primary focus-ring;
+  }
+}
+
 /* The hint that explains an icon on hover or keyboard focus (Hint): small, inverse, quick to appear and to go */
 @utility hint {
   @apply z-50 max-w-64 animate-fade rounded-xl bg-ink px-3 py-2 text-caption text-bg select-none;
@@ -254,6 +262,10 @@
   @apply relative flex min-h-tap cursor-pointer items-center gap-2 rounded-chip py-2 pr-10 pl-4 text-body text-ink outline-none transition-colors select-none;
   &[data-highlighted] {
     @apply bg-hover;
+  }
+  /* Arrow keys: the grey wash alone is faint on glass, so the keyboard's place also gets the usual ring. */
+  &:focus-visible {
+    @apply outline-2 -outline-offset-2 outline-primary;
   }
   &[data-state="checked"] {
     @apply font-semibold text-primary;
@@ -311,6 +323,15 @@
   }
 }
 
+/* The scrolling part of a sheet. A thin scrollbar, with the same space kept on the left as the scrollbar takes on the
+   right, so the content stays centred (Windows scrollbars are 15px and otherwise push everything off-centre).
+   Phones and Macs with overlay scrollbars keep no space at all. Its parent clips it to the sheet's rounded corners. */
+@utility sheet-scroll {
+  @apply min-h-0 flex-1 overflow-y-auto overscroll-contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable both-edges;
+}
+
 /* The little handle at the top of a bottom sheet (phones only) */
 @utility sheet-handle {
   @apply mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-hover sm:hidden;
@@ -322,11 +343,15 @@
   &:hover {
     @apply bg-primary-strong;
   }
-  &:active:not(:disabled) {
+  &:active:not(:disabled, [aria-disabled="true"]) {
     @apply scale-[0.97];
   }
   &:disabled {
     @apply cursor-not-allowed opacity-50;
+  }
+  /* Busy (sending): looks unavailable but keeps keyboard focus, unlike :disabled */
+  &[aria-disabled="true"] {
+    @apply cursor-wait opacity-70;
   }
 }
 

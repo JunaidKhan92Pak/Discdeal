@@ -28,7 +28,9 @@ type HeaderProps = {
  */
 export function Header({ city, onCityChange, onHome, browsing, children }: HeaderProps) {
   return (
-    <header
+    // One grid for logo, search and tools (so they line up), but only the logo and tools are the page's banner
+    // (<header>, display: contents). The search stage is the main content until results show.
+    <div
       className={`grid grid-cols-[1fr_auto] items-center gap-x-4 ${
         browsing
           ? // Phones: a sticky search bar (app-bar). Desktop: same first column as the sidebar, so the search starts where the results do.
@@ -36,9 +38,12 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
           : "mx-auto min-h-0 w-full max-w-browse grow grid-rows-[auto_1fr]"
       }`}
     >
+      <header className="contents">
       <Link
         href="/"
         onClick={(e) => {
+          // Ctrl/Cmd/Shift/middle click: let the browser open home in a new tab or window.
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault();
           onHome();
         }}
@@ -47,7 +52,7 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
       >
         <span className="grid size-9 place-items-center rounded-full bg-primary pb-0.5 font-bold text-on-primary">d</span>
         {/* The word needs room: on narrow phones the city, account and theme buttons come first. */}
-        <span className="hidden text-ink min-[420px]:inline">
+        <span className="hidden text-ink min-[420px]:inline" translate="no">
           disc<span className="text-primary">deal</span>
         </span>
       </Link>
@@ -59,7 +64,7 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
         <Select
           label="Your city"
           icon="pin"
-          compact={city === null}
+          variant={city === null ? "icon" : "label"}
           hint={{ label: "Your city", detail: city ? `Showing deals in ${cityLabel(city)}` : "Showing deals from all of Pakistan" }}
           value={city ?? "all"}
           options={CITY_OPTIONS}
@@ -68,8 +73,17 @@ export function Header({ city, onCityChange, onHome, browsing, children }: Heade
         <AccountButton />
         <ThemeToggle />
       </div>
+      </header>
 
-      <div className={`col-span-2 row-start-2 min-h-0 ${browsing ? "lg:col-span-1 lg:col-start-2 lg:row-start-1" : "h-full"}`}>{children}</div>
-    </header>
+      {/* Always the same element (the search input inside must never re-mount); only its landmark role changes. */}
+      <div
+        id={browsing ? undefined : "main"}
+        role={browsing ? undefined : "main"}
+        tabIndex={browsing ? undefined : -1}
+        className={`col-span-2 row-start-2 min-h-0 outline-none ${browsing ? "lg:col-span-1 lg:col-start-2 lg:row-start-1" : "h-full"}`}
+      >
+        {children}
+      </div>
+    </div>
   );
 }

@@ -14,6 +14,9 @@ import type { DealQuery } from "@/lib/types";
  * together. While developing, the `X-Cache` header says which layer answered (memory / redis / fresh).
  */
 export async function GET(request: NextRequest) {
+  // Independent lookups (both may ask Redis): start them together instead of one after the other.
+  // The version lookup never throws (it falls back on its own), so starting it before the limit check is safe.
+  const versionPromise = dataVersion();
   const limit = await rateLimit(visitorId(request.headers));
   if (!limit.ok) {
     return Response.json(
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   const query = parseDealQuery(request.nextUrl.searchParams);
   try {
-    const key = `search:${await dataVersion()}:${cacheKey(query)}`;
+    const key = `search:${await versionPromise}:${cacheKey(query)}`;
     const { value, from } = await cached(key, config.searchSeconds, async () => searchDeals(query, await getCatalog()), { shared: true });
     return Response.json(value, {
       headers: {

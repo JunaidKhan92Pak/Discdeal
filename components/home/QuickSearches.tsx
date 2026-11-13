@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import { popIn } from "@/lib/motion";
+import { EASE_BACK, popIn } from "@/lib/animate";
 
 /**
  * One-tap example searches under the search bar; they also show people what smart search understands.
@@ -14,7 +14,7 @@ export function QuickSearches({ examples, onPick }: { examples: string[]; onPick
 
   useLayoutEffect(() => {
     if (!shown || !rowRef.current) return;
-    return popIn(rowRef.current.children, { y: 10, scale: 0.94, start: 450, step: 50, ease: "outBack(1.4)" });
+    return popIn(rowRef.current.children, { y: 10, scale: 0.94, start: 450, step: 50, ease: EASE_BACK });
   }, [shown]);
 
   if (!shown) return null;

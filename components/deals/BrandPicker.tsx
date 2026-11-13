@@ -3,26 +3,20 @@
 import { useRef, useState } from "react";
 import { Dialog } from "radix-ui";
 import { BrandList } from "@/components/deals/BrandList";
+import { useDealsContext } from "@/components/deals/DealsContext";
 import { Icon } from "@/components/ui/Icon";
-import type { BrandChoice } from "@/hooks/useBrowseFilters";
-import type { BrandFacet } from "@/lib/types";
-
-type BrandPickerProps = {
-  /** Brands in the current results (already narrowed by category, search, city …), A–Z. */
-  brands: BrandFacet[];
-  selected: BrandChoice[];
-  /** Where the list comes from, for the subtitle: "Food", "Fast food" … null = everything. */
-  scope: string | null;
-  onToggle: (brand: BrandChoice) => void;
-  onClear: () => void;
-};
 
 /**
  * Phones and tablets: the "Brand" button and its list in a Radix Dialog (a bottom sheet on phones).
  * On desktop the same list sits in the sidebar instead. Several brands can be ticked; the results update behind the
  * sheet as you tick, and "Done" closes it.
  */
-export function BrandPicker({ brands, selected, scope, onToggle, onClear }: BrandPickerProps) {
+export function BrandPicker() {
+  const {
+    // brands: already narrowed by category, search, city …; scope: what they are narrowed to, for the subtitle.
+    state: { brands, selectedBrands: selected, brandScope: scope },
+    actions: { toggleBrand: onToggle, clearBrands: onClear },
+  } = useDealsContext();
   const [open, setOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const label = selected.length === 0 ? "Brand" : selected.length === 1 ? selected[0].name : `${selected.length} brands`;
@@ -61,7 +55,7 @@ export function BrandPicker({ brands, selected, scope, onToggle, onClear }: Bran
             </Dialog.Close>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+          <div className="sheet-scroll scroll-pt-16 px-4 pb-4">
             <BrandList brands={brands} selected={selected} onToggle={onToggle} onClear={onClear} />
           </div>
 

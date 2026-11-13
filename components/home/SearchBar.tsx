@@ -9,8 +9,8 @@ import { EASE, gsap, reducedMotion, sleepWhenIdle } from "@/lib/motion";
 
 type SearchBarProps = {
   value: string;
-  /** Slimmer bar once results show (it sits in the header row on desktop). */
-  compact?: boolean;
+  /** "hero": the big bar on the start screen. "bar": slimmer once results show (it sits in the header row on desktop). */
+  variant?: "hero" | "bar";
   onChange: (value: string) => void;
   onFocus: () => void;
   onBlur: () => void;
@@ -19,14 +19,15 @@ type SearchBarProps = {
   examples?: string[];
 };
 
-export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, onSubmit, examples = [] }: SearchBarProps) {
+export function SearchBar({ value, variant = "hero", onChange, onFocus, onBlur, onSubmit, examples = [] }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const typedRef = useRef<HTMLElement>(null);
   const [focused, setFocused] = useState(false);
   // False on the server and for people who asked for less motion: they get the plain placeholder.
   const motionOk = useMediaQuery("(prefers-reduced-motion: no-preference)");
-  const typing = motionOk && !compact && !focused && value === "" && examples.length > 0;
+  const hero = variant === "hero";
+  const typing = motionOk && hero && !focused && value === "" && examples.length > 0;
   useTypewriter(typedRef, examples, typing);
 
   // Rises in just after the headline (see Hero). Mounted once: it stays put while the screen switches to results.
@@ -61,13 +62,13 @@ export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, o
         inputRef.current?.blur();
         onSubmit();
       }}
-      className={`mx-auto w-full max-w-search ${compact ? "lg:mx-0" : ""}`}
+      className={`mx-auto w-full max-w-search ${hero ? "" : "lg:mx-0"}`}
     >
       <Label.Root htmlFor="search" className="sr-only">
         Search deals
       </Label.Root>
       {/* One search symbol only, on the button. The pill shape and the example text already say "type here". */}
-      <div className="field" data-compact={compact}>
+      <div className="field" data-variant={variant}>
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
           <input
             id="search"
@@ -76,7 +77,7 @@ export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, o
             autoComplete="off"
             dir="auto"
             enterKeyHint="search"
-            placeholder="Try “pizza in Lahore” or “kapray 50%”"
+            placeholder="Try “pizza in Lahore” or “kapray 50%”…"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => {
@@ -116,11 +117,11 @@ export function SearchBar({ value, compact = false, onChange, onFocus, onBlur, o
             <Icon name="close" className="size-4" />
           </button>
         )}
-        {/* The magnifier everyone knows, plus the word on larger screens (clearest for every age); icon only when compact. */}
-        <button type="submit" aria-label="Search deals" className={`search-btn group ${compact ? "" : "sm:px-5"}`}>
+        {/* The magnifier everyone knows, plus the word on larger screens (clearest for every age); icon only in the slim bar. */}
+        <button type="submit" aria-label="Search deals" className={`search-btn group ${hero ? "sm:px-5" : ""}`}>
           {/* The magnifier leans in, as if looking, when the pointer reaches the button */}
           <Icon name="search" className="size-5 transition-transform duration-300 ease-smooth group-hover:scale-110 group-hover:-rotate-12" strokeWidth={2.25} />
-          {!compact && <span className="hidden text-body font-semibold sm:inline">Search</span>}
+          {hero && <span className="hidden text-body font-semibold sm:inline">Search</span>}
         </button>
       </div>
     </form>

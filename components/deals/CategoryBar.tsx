@@ -1,19 +1,10 @@
 "use client";
 
 import { ToggleGroup } from "radix-ui";
+import { useDealsContext } from "@/components/deals/DealsContext";
 import { Icon } from "@/components/ui/Icon";
 import { CATEGORIES } from "@/lib/taxonomy";
 import type { CategoryId } from "@/lib/types";
-
-type CategoryBarProps = {
-  categories: CategoryId[];
-  subs: string[];
-  categoryCounts: Record<string, number>;
-  subCounts: Record<string, number>;
-  onToggleCategory: (category: CategoryId) => void;
-  onClearCategories: () => void;
-  onToggleSub: (sub: string) => void;
-};
 
 const ROW =
   "-mx-gutter flex gap-2 overflow-x-auto px-gutter py-1 [scrollbar-width:none] sm:mx-0 sm:px-0.5";
@@ -28,7 +19,11 @@ function changed(prev: string[], next: string[]): string | undefined {
  * between them). "All" clears them. Every chosen category opens its types in a second, smaller row, where several
  * can be ticked too. Categories with no matches are hidden.
  */
-export function CategoryBar({ categories, subs, categoryCounts, subCounts, onToggleCategory, onClearCategories, onToggleSub }: CategoryBarProps) {
+export function CategoryBar() {
+  const {
+    state: { categories, subs, categoryCounts, subCounts },
+    actions: { toggleCategory: onToggleCategory, clearCategories: onClearCategories, toggleSub: onToggleSub },
+  } = useDealsContext();
   const visible = CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0 || categories.includes(c.id));
   const open = CATEGORIES.filter((c) => categories.includes(c.id))
     .map((c) => ({ category: c, subs: c.subcategories.filter((s) => (subCounts[s.id] ?? 0) > 0 || subs.includes(s.id)) }))
@@ -74,8 +69,11 @@ export function CategoryBar({ categories, subs, categoryCounts, subCounts, onTog
           className={`${ROW} animate-fade items-center`}
         >
           {open.map(({ category, subs: shown }) => (
-            <div key={category.id} className="flex shrink-0 items-center gap-2">
-              <span className="shrink-0 text-small text-muted">{category.short}:</span>
+            // Grouped and named, so a screen reader says which category "Pizza" or "Jeans" belongs to.
+            <div key={category.id} role="group" aria-label={`Types of ${category.label}`} className="flex shrink-0 items-center gap-2">
+              <span className="shrink-0 text-small text-muted" aria-hidden="true">
+                {category.short}:
+              </span>
               {shown.map((s) => (
                 <ToggleGroup.Item key={s.id} value={s.id} className="chip">
                   {s.label}

@@ -5,9 +5,9 @@ import { DealCard } from "@/components/deals/DealCard";
 import type { DealsStatus } from "@/hooks/useDeals";
 import { DESKTOP, useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
-import { popIn } from "@/lib/motion";
+import { popIn } from "@/lib/animate";
 import { dataSaver } from "@/lib/network";
-import type { Bank, Card, CityId, Deal } from "@/lib/types";
+import type { Deal } from "@/lib/types";
 
 type ResultsGridProps = {
   items: Deal[];
@@ -17,17 +17,8 @@ type ResultsGridProps = {
   loadingMore: boolean;
   moreFailed: boolean;
   emptyMessage: string;
-  likedIds: number[];
-  searchedCities: CityId[];
-  /** The user's saved cards: deals they get are marked "Your card". */
-  myCardIds: string[];
-  cards: Card[];
-  /** Bank names, for "By HBL" on card offers. */
-  banks: Bank[];
   /** Scrolls back to the top whenever this changes (a new search or filter). */
   resetKey: string;
-  onToggleLike: (id: number) => void;
-  onOpen: (deal: Deal) => void;
   onLoadMore: () => void;
   onRetry: () => void;
 };
@@ -51,7 +42,7 @@ const preload = () => (dataSaver() ? "0px 0px 250px 0px" : "0px 0px 800px 0px");
  * New cards rise in one after another (anime.js): all of them for a new search, only the added ones while scrolling.
  */
 export function ResultsGrid(props: ResultsGridProps) {
-  const { items, status, total, hasMore, loadingMore, moreFailed, emptyMessage, likedIds, searchedCities, resetKey, onLoadMore } = props;
+  const { items, status, total, hasMore, loadingMore, moreFailed, emptyMessage, resetKey, onLoadMore } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -132,7 +123,7 @@ export function ResultsGrid(props: ResultsGridProps) {
         <ul ref={listRef} className={`${GRID} transition-opacity ${status === "refreshing" ? "opacity-50" : "opacity-100"}`}>
           {items.map((deal) => (
             <li key={deal.id} data-id={deal.id}>
-              <DealCard deal={deal} liked={likedIds.includes(deal.id)} searchedCities={searchedCities} myCardIds={props.myCardIds} cards={props.cards} banks={props.banks} onToggleLike={props.onToggleLike} onOpen={props.onOpen} />
+              <DealCard deal={deal} />
             </li>
           ))}
           {loadingMore &&

@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { EASE, createLenis, gsap, reducedMotion, sleepWhenIdle } from "@/lib/motion";
+import type Lenis from "lenis";
+import { EASE, gsap, reducedMotion, sleepWhenIdle } from "@/lib/motion";
+import { createLenis } from "@/lib/smooth-scroll";
 
 /**
  * For the readable pages (/deals…, /about): smooth scrolling with Lenis (mouse and trackpad only, and only drawing
@@ -19,8 +21,13 @@ export function PageMotion() {
     else if (scrollTrigger === "disabled") ScrollTrigger.enable();
     scrollTrigger = "on";
 
-    const lenis = createLenis({ anchors: true });
-    lenis?.on("scroll", ScrollTrigger.update);
+    let lenis: Lenis | null = null;
+    let gone = false;
+    void createLenis({ anchors: true }).then((created) => {
+      if (gone) return created?.destroy();
+      lenis = created;
+      lenis?.on("scroll", ScrollTrigger.update);
+    });
 
     const triggers = ScrollTrigger.batch("[data-reveal]", {
       // As soon as any part is on screen, so even the last line of a short page is revealed.
@@ -31,6 +38,7 @@ export function PageMotion() {
 
     return () => {
       triggers.forEach((t) => t.kill());
+      gone = true;
       lenis?.destroy();
       // Revealed elements keep their final inline styles; only ScrollTrigger's listeners and timer are stopped.
       ScrollTrigger.disable(false);

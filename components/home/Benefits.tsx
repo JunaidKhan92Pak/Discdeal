@@ -1,9 +1,22 @@
+import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
-const BENEFITS: { icon: IconName; lead: string; rest: string }[] = [
+const BENEFITS: { icon: IconName; lead: string; rest: ReactNode }[] = [
   { icon: "store", lead: "Brand sales", rest: "open to everyone" },
   { icon: "card", lead: "Your bank cards", rest: "see what each one gets you" },
-  { icon: "search", lead: "One search", rest: "in English, Roman Urdu or اردو" },
+  {
+    icon: "search",
+    lead: "One search",
+    // Marked as Urdu so screen readers pronounce it as Urdu, not as English letters.
+    rest: (
+      <>
+        in English, Roman Urdu or{" "}
+        <span lang="ur" dir="rtl">
+          اردو
+        </span>
+      </>
+    ),
+  },
 ];
 
 /**

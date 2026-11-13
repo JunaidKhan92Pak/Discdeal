@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { CategoryBar } from "@/components/deals/CategoryBar";
 import { DealModal } from "@/components/deals/DealModal";
+import { DealsContext, type DealsContextValue } from "@/components/deals/DealsContext";
 import { FilterSidebar } from "@/components/deals/FilterSidebar";
 import { IntentChips } from "@/components/deals/IntentChips";
 import { ResultsGrid } from "@/components/deals/ResultsGrid";
@@ -79,6 +80,42 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
     onQueryChange(removeWords(query, part.words));
   }
 
+  const context: DealsContextValue = {
+    state: {
+      categories: filters.categories,
+      subs: filters.subs,
+      selectedBrands: filters.brands,
+      sort: filters.sort,
+      likedOnly: filters.likedOnly,
+      brandScope,
+      ready: page !== null,
+      total: page?.total ?? null,
+      status,
+      categoryCounts: page?.categoryCounts ?? {},
+      subCounts: page?.subCounts ?? {},
+      brands: page?.brands ?? [],
+      searchedCities,
+      liked,
+      myCards,
+      cards: meta?.cards ?? [],
+      banks: meta?.banks ?? [],
+      catalogReady: meta !== null,
+    },
+    actions: {
+      toggleCategory: filters.toggleCategory,
+      clearCategories: filters.clearCategories,
+      toggleSub: filters.toggleSub,
+      toggleBrand: filters.toggleBrand,
+      clearBrands: filters.clearBrands,
+      setSort: filters.setSort,
+      toggleLikedOnly: showLiked,
+      toggleLike: toggle,
+      saveCards,
+      openDeal,
+      showBrand,
+    },
+  };
+
   const trimmed = query.trim();
   const emptyMessage = filters.likedOnly
     ? liked.length === 0
@@ -91,94 +128,49 @@ export function DealsBrowser({ query, city, searchNow, onQueryChange }: DealsBro
       : `No deals found${trimmed ? ` for “${trimmed}”` : ""}. Try another word or category.`;
 
   return (
-    <section
-      aria-label="Browse deals"
-      className="mx-auto mt-3 grid min-h-0 w-full max-w-browse flex-1 animate-rise gap-4 lg:grid-rows-[minmax(0,1fr)] lg:mt-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 [@media(max-height:34rem)]:min-h-[26rem]"
-    >
-      {/* Desktop: every filter visible at once in a sidebar. Phones and tablets: pills + a Brand sheet below. */}
-      <FilterSidebar
-        className="hidden lg:flex"
-        ready={page !== null}
-        categories={filters.categories}
-        subs={filters.subs}
-        categoryCounts={page?.categoryCounts ?? {}}
-        subCounts={page?.subCounts ?? {}}
-        onToggleCategory={filters.toggleCategory}
-        onClearCategories={filters.clearCategories}
-        onToggleSub={filters.toggleSub}
-        brands={page?.brands ?? []}
-        selectedBrands={filters.brands}
-        brandScope={brandScope}
-        onToggleBrand={filters.toggleBrand}
-        onClearBrands={filters.clearBrands}
-      />
+    <DealsContext value={context}>
+      <section
+        aria-label="Browse deals"
+        className="mx-auto mt-3 grid min-h-0 w-full max-w-browse flex-1 animate-rise gap-4 lg:grid-rows-[minmax(0,1fr)] lg:mt-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 [@media(max-height:34rem)]:min-h-[26rem]"
+      >
+        {/* Desktop: every filter visible at once in a sidebar. Phones and tablets: pills + a Brand sheet below. */}
+        <FilterSidebar className="hidden lg:flex" />
 
-      <div className="flex min-h-0 min-w-0 flex-col gap-3">
-        {/* Phones: what search understood gets its own row. Desktop: it joins the results line below. */}
-        <div className="empty:hidden lg:hidden">
-          <IntentChips parts={parts} onRemove={removePart} />
+        <div className="flex min-h-0 min-w-0 flex-col gap-3">
+          {/* Phones: what search understood gets its own row. Desktop: it joins the results line below. */}
+          <div className="empty:hidden lg:hidden">
+            <IntentChips parts={parts} onRemove={removePart} />
+          </div>
+
+          <div className="empty:hidden lg:hidden">
+            <CategoryBar />
+          </div>
+
+          <ResultsToolbar understood={parts.length > 0 ? <IntentChips parts={parts} onRemove={removePart} variant="inline" /> : undefined} />
+
+          {/* Always present (empty when there is nothing to say), so a new notice is read out. */}
+          <p className="-mt-1 text-small text-soft empty:hidden" aria-live="polite">
+            {page?.intent.notice ?? ""}
+          </p>
+
+          <div className="min-h-0 flex-1">
+            <ResultsGrid
+              items={items}
+              status={status}
+              total={page?.total ?? 0}
+              hasMore={page?.nextOffset != null}
+              loadingMore={loadingMore}
+              moreFailed={moreFailed}
+              emptyMessage={emptyMessage}
+              resetKey={`${filters.categories.join(",")}-${filters.subs.join(",")}-${filters.brands.map((b) => b.id).join(",")}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
+              onLoadMore={loadMore}
+              onRetry={retry}
+            />
+          </div>
         </div>
 
-        <div className="empty:hidden lg:hidden">
-          <CategoryBar
-            categories={filters.categories}
-            subs={filters.subs}
-            categoryCounts={page?.categoryCounts ?? {}}
-            subCounts={page?.subCounts ?? {}}
-            onToggleCategory={filters.toggleCategory}
-            onClearCategories={filters.clearCategories}
-            onToggleSub={filters.toggleSub}
-          />
-        </div>
-
-        <ResultsToolbar
-          total={page?.total ?? null}
-          status={status}
-          sort={filters.sort}
-          likedOnly={filters.likedOnly}
-          likedCount={liked.length}
-          brands={page?.brands ?? []}
-          selectedBrands={filters.brands}
-          brandScope={brandScope}
-          onToggleBrand={filters.toggleBrand}
-          onClearBrands={filters.clearBrands}
-          onSort={filters.setSort}
-          onToggleLiked={showLiked}
-          myCards={myCards}
-          onSaveCards={saveCards}
-          banks={meta?.banks ?? null}
-          cards={meta?.cards ?? null}
-          understood={parts.length > 0 ? <IntentChips parts={parts} onRemove={removePart} variant="inline" /> : undefined}
-        />
-
-        {page?.intent.notice && <p className="-mt-1 text-small text-soft">{page.intent.notice}</p>}
-
-        <div className="min-h-0 flex-1">
-          <ResultsGrid
-            items={items}
-            status={status}
-            total={page?.total ?? 0}
-            hasMore={page?.nextOffset != null}
-            loadingMore={loadingMore}
-            moreFailed={moreFailed}
-            emptyMessage={emptyMessage}
-            likedIds={liked}
-            searchedCities={searchedCities}
-            myCardIds={myCards.cards}
-            cards={meta?.cards ?? []}
-            banks={meta?.banks ?? []}
-            resetKey={`${filters.categories.join(",")}-${filters.subs.join(",")}-${filters.brands.map((b) => b.id).join(",")}-${filters.sort}-${filters.likedOnly}-${myCards.only}-${city}-${items[0]?.id}`}
-            onToggleLike={toggle}
-            onOpen={openDeal}
-            onLoadMore={loadMore}
-            onRetry={retry}
-          />
-        </div>
-      </div>
-
-      {selected && (
-        <DealModal deal={selected} myCardIds={myCards.cards} cards={meta?.cards ?? []} banks={meta?.banks ?? []} open={detailsOpen} returnFocusTo={openerRef} liked={liked.includes(selected.id)} onToggleLike={toggle} onOpenChange={setDetailsOpen} onShowBrand={showBrand} />
-      )}
-    </section>
+        {selected && <DealModal deal={selected} open={detailsOpen} returnFocusTo={openerRef} onOpenChange={setDetailsOpen} />}
+      </section>
+    </DealsContext>
   );
 }

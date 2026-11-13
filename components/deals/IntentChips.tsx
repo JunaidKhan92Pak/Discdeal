@@ -30,14 +30,14 @@ export function IntentChips({ parts, onRemove, variant = "row" }: IntentChipsPro
 
   if (variant === "inline") {
     return (
-      <span className="contents" aria-label="Search understood as">
+      <span role="group" className="contents" aria-label="Search understood as">
         {chips}
       </span>
     );
   }
 
   return (
-    <div className="-mx-gutter flex items-center gap-2 overflow-x-auto px-gutter py-0.5 [scrollbar-width:none] sm:mx-0 sm:px-0" aria-label="Search understood as">
+    <div className="-mx-gutter flex items-center gap-2 overflow-x-auto px-gutter py-0.5 [scrollbar-width:none] sm:mx-0 sm:px-0" role="group" aria-label="Search understood as">
       <span className="shrink-0 text-small text-soft">Showing:</span>
       {chips}
     </div>

@@ -24,7 +24,7 @@ export function InstallButton() {
 
   return (
     <>
-      <button type="button" onClick={install} className="pill animate-fade bg-primary-soft text-primary hover:bg-primary hover:text-on-primary" aria-label={`Download the ${SITE_NAME} app`}>
+      <button type="button" onClick={install} className="pill animate-fade bg-primary-soft text-primary hover:bg-primary hover:text-on-primary" aria-label="Download the app">
         <Icon name="download" className="size-5" strokeWidth={2} />
         <span>
           <span className="sm:hidden">App</span>

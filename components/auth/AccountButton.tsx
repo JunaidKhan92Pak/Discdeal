@@ -1,6 +1,7 @@
 "use client";
 
 import { DropdownMenu } from "radix-ui";
+import { preloadAuthDialog } from "@/components/auth/LazyAuthDialog";
 import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
 import { account, useAccount } from "@/hooks/useAccount";
@@ -15,7 +16,15 @@ export function AccountButton() {
   if (!user) {
     return (
       <Hint label="Log in" detail="Save deals and find them on any device.">
-        <button type="button" className="pill" data-iconic="" onClick={() => account.ask({ mode: "login" })} aria-label="Log in or create an account">
+        <button
+          type="button"
+          className="pill"
+          data-iconic=""
+          onPointerEnter={preloadAuthDialog}
+          onFocus={preloadAuthDialog}
+          onClick={() => account.ask({ mode: "login" })}
+          aria-label="Log in or create an account"
+        >
           <Icon name="user" className="size-5" />
         </button>
       </Hint>

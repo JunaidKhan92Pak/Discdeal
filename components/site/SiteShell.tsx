@@ -13,11 +13,14 @@ export function SiteShell({ children, breadcrumbs = [] }: { children: ReactNode;
   return (
     <div className="min-h-svh">
       <PageMotion />
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <header className="glass sticky top-0 z-40">
         <div className="mx-auto flex w-full max-w-content items-center justify-between gap-4 px-gutter py-3">
           <Link href="/" className="flex items-center gap-2.5 rounded-full text-title font-bold focus-ring" aria-label="DiscDeal home">
             <span className="grid size-9 place-items-center rounded-full bg-primary pb-0.5 font-bold text-on-primary">d</span>
-            <span className="hidden min-[360px]:inline">discdeal</span>
+            <span className="hidden min-[360px]:inline" translate="no">discdeal</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/" className="btn-primary h-11 px-5 whitespace-nowrap" aria-label="Search deals">
@@ -29,7 +32,7 @@ export function SiteShell({ children, breadcrumbs = [] }: { children: ReactNode;
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-content px-gutter pt-6 pb-16 sm:pt-10">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-content px-gutter pt-6 pb-16 outline-none sm:pt-10">
         {breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="mb-6 text-small text-muted" data-reveal>
             <ol className="flex flex-wrap items-center gap-1.5">
@@ -73,7 +76,7 @@ export function SiteShell({ children, breadcrumbs = [] }: { children: ReactNode;
 /** Section heading used on these pages. */
 export function SectionTitle({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h2 id={id} className="mt-14 mb-4 scroll-mt-24 text-headline text-ink" data-reveal>
+    <h2 id={id} className="mt-14 mb-4 scroll-mt-24 text-headline text-balance text-ink" data-reveal>
       {children}
     </h2>
   );
@@ -97,7 +100,7 @@ export function FaqList({ items, className = "" }: { items: { question: string; 
 export function PageIntro({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-page text-ink" data-reveal>
+      <h1 className="text-page text-balance text-ink" data-reveal>
         {title}
       </h1>
       {children && (

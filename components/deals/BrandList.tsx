@@ -42,9 +42,11 @@ export function BrandList({ brands, selected, onToggle, onClear, searchBackgroun
             <input
               id={inputId}
               type="search"
+              name="brand-search"
               autoComplete="off"
+              spellCheck={false}
               dir="auto"
-              placeholder="Find a brand"
+              placeholder="Find a brand…"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-muted"
@@ -72,12 +74,15 @@ export function BrandList({ brands, selected, onToggle, onClear, searchBackgroun
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-fill text-small font-bold text-muted" aria-hidden="true">
             {b.name.charAt(0).toUpperCase()}
           </span>
-          <span className="flex-1 truncate">{b.name}</span>
+          <span className="flex-1 truncate" translate="no">{b.name}</span>
           <CheckMark />
         </button>
       ))}
 
-      {needle && shown.length === 0 && <p className="px-3 py-4 text-center text-body text-soft">No brand called “{filter.trim()}” here.</p>}
+      {/* Always in the page, so "no brand" is announced the moment it appears. */}
+      <p className="px-3 py-4 text-center text-body text-soft empty:hidden" aria-live="polite">
+        {needle && shown.length === 0 ? `No brand called “${filter.trim()}” here.` : ""}
+      </p>
     </div>
   );
 }

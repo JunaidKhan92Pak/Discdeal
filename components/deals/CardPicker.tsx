@@ -2,26 +2,23 @@
 
 import { useState } from "react";
 import { Dialog } from "radix-ui";
+import { useDealsContext } from "@/components/deals/DealsContext";
 import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
-import type { MyCards } from "@/hooks/useMyCards";
-import type { Bank, Card } from "@/lib/types";
-
-type CardPickerProps = {
-  myCards: MyCards;
-  onSave: (next: MyCards) => void;
-  /** Banks and cards from the data (null while loading). */
-  banks: Bank[] | null;
-  cards: Card[] | null;
-};
 
 /**
  * "My cards": tick the bank cards you have, then see only the discounts they get. A Radix Dialog (a bottom sheet on
  * phones). Saved on this device only, and only the card's name: the user never types a card number.
  */
-export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
+export function CardPicker() {
+  const {
+    state: { myCards, banks, cards, catalogReady },
+    actions: { saveCards: onSave },
+  } = useDealsContext();
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string[]>(myCards.cards);
+  /** "Show deals for my cards" was pressed with nothing ticked. */
+  const [nudge, setNudge] = useState(false);
 
   const active = myCards.only && myCards.cards.length > 0;
   const saved = myCards.cards.length;
@@ -39,7 +36,10 @@ export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
     <Dialog.Root
       open={open}
       onOpenChange={(next) => {
-        if (next) setPicked(myCards.cards); // start from what is saved each time it opens
+        if (next) {
+          setPicked(myCards.cards); // start from what is saved each time it opens
+          setNudge(false);
+        }
         setOpen(next);
       }}
     >
@@ -74,14 +74,14 @@ export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
             </Dialog.Close>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2">
-            {!banks || !cards ? (
+          <div className="sheet-scroll px-4 pb-2">
+            {!catalogReady ? (
               <p className="px-3 py-6 text-center text-body text-soft">Loading cards…</p>
             ) : null}
-            {(banks ?? []).map((bank) => (
+            {banks.map((bank) => (
               <fieldset key={bank.id} className="mb-3">
                 <legend className="eyebrow px-3 pb-1">{bank.name}</legend>
-                {(cards ?? []).filter((c) => c.bank === bank.id).map((card) => {
+                {cards.filter((c) => c.bank === bank.id).map((card) => {
                   const checked = picked.includes(card.id);
                   return (
                     <button key={card.id} type="button" role="checkbox" aria-checked={checked} className="list-row" onClick={() => toggle(card.id)}>
@@ -100,8 +100,19 @@ export function CardPicker({ myCards, onSave, banks, cards }: CardPickerProps) {
             <p className="px-3 pb-2 text-small text-muted">More banks are being added. Missing yours? It is coming soon.</p>
           </div>
 
+          {/* Says why instead of a greyed-out button (which can't be focused, so its reason can't be found). */}
+          <p className="px-5 pt-2 text-center text-small font-medium text-urgent empty:hidden" aria-live="polite">
+            {nudge && picked.length === 0 ? "Tick at least one card first." : ""}
+          </p>
           <div className="flex flex-col gap-2 px-5 pt-3 pb-5 sm:flex-row-reverse">
-            <button type="button" className="btn-primary flex-1" disabled={picked.length === 0} onClick={() => finish(true)}>
+            <button
+              type="button"
+              className="btn-primary flex-1"
+              onClick={() => {
+                if (picked.length === 0) setNudge(true);
+                else finish(true);
+              }}
+            >
               Show deals for my cards
             </button>
             <button type="button" className="btn-secondary" onClick={() => finish(false)}>

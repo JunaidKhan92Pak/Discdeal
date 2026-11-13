@@ -4,13 +4,11 @@ import type { ReactNode } from "react";
 import { Toggle } from "radix-ui";
 import { BrandPicker } from "@/components/deals/BrandPicker";
 import { CardPicker } from "@/components/deals/CardPicker";
+import { useDealsContext } from "@/components/deals/DealsContext";
 import { Hint } from "@/components/ui/Hint";
 import { Icon } from "@/components/ui/Icon";
 import { Select } from "@/components/ui/Select";
-import type { BrandChoice } from "@/hooks/useBrowseFilters";
-import type { MyCards } from "@/hooks/useMyCards";
-import type { DealsStatus } from "@/hooks/useDeals";
-import type { Bank, BrandFacet, Card, SortKey } from "@/lib/types";
+import type { SortKey } from "@/lib/types";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "relevance", label: "Best match" },
@@ -20,23 +18,6 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 const DEFAULT_SORT: SortKey = "relevance";
 
 type ResultsToolbarProps = {
-  total: number | null;
-  status: DealsStatus;
-  sort: SortKey;
-  likedOnly: boolean;
-  likedCount: number;
-  brands: BrandFacet[];
-  selectedBrands: BrandChoice[];
-  /** What the brand list is narrowed to ("Food", "Fast food"), or null. */
-  brandScope: string | null;
-  onToggleBrand: (brand: BrandChoice) => void;
-  onClearBrands: () => void;
-  onSort: (sort: SortKey) => void;
-  onToggleLiked: () => void;
-  myCards: MyCards;
-  onSaveCards: (next: MyCards) => void;
-  banks: Bank[] | null;
-  cards: Card[] | null;
   /** What search understood, shown after the count on desktop: "8 deals for [Lahore ×] [Fashion ×]". */
   understood?: ReactNode;
 };
@@ -47,15 +28,20 @@ type ResultsToolbarProps = {
  * The tools rest as icons and explain themselves on hover / keyboard focus (Hint); a tool that is changing the
  * results (a filter on, a sort other than the default) shows its label, so what you see is always explained.
  */
-export function ResultsToolbar(props: ResultsToolbarProps) {
-  const { total, status, sort, likedOnly, likedCount, brands, selectedBrands, brandScope, onSort, onToggleLiked, understood } = props;
+export function ResultsToolbar({ understood }: ResultsToolbarProps) {
+  const {
+    state: { total, status, sort, likedOnly, liked },
+    actions: { setSort: onSort, toggleLikedOnly: onToggleLiked },
+  } = useDealsContext();
+  const likedCount = liked.length;
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Best match";
   const likedDetail = likedCount === 0 ? "Use the heart on any deal to save it here." : `See the ${likedCount} deal${likedCount === 1 ? "" : "s"} you saved.`;
   return (
     <div className="-mx-gutter flex items-center gap-2 overflow-x-auto px-gutter py-1 [scrollbar-width:none] sm:mx-0 sm:px-0.5 lg:overflow-visible">
       <div className="mr-auto flex min-w-0 shrink-0 items-center gap-2 lg:shrink lg:flex-wrap">
-        {/* No count on screen (the deals speak for themselves); screen readers still hear how many were found. */}
-        <p className="shrink-0 text-body font-semibold whitespace-nowrap text-ink" aria-live="polite">
+        {/* No count on screen (the deals speak for themselves); screen readers still hear how many were found.
+            A heading, so the cards (h3) sit under "Deals" in the page outline. */}
+        <h2 className="shrink-0 text-body font-semibold whitespace-nowrap text-ink" aria-live="polite">
           {total === null || status === "loading" ? (
             "Searching…"
           ) : (
@@ -63,7 +49,7 @@ export function ResultsToolbar(props: ResultsToolbarProps) {
               Deals<span className="sr-only">: {total} found</span>
             </>
           )}
-        </p>
+        </h2>
         {understood && (
           <span className="hidden items-center gap-2 lg:flex lg:flex-wrap">
             <span className="text-body text-soft">for</span>
@@ -71,17 +57,17 @@ export function ResultsToolbar(props: ResultsToolbarProps) {
           </span>
         )}
       </div>
-      <CardPicker myCards={props.myCards} onSave={props.onSaveCards} banks={props.banks} cards={props.cards} />
+      <CardPicker />
       {/* On desktop the brand list lives in the sidebar. */}
       <div className="shrink-0 lg:hidden">
-        <BrandPicker brands={brands} selected={selectedBrands} scope={brandScope} onToggle={props.onToggleBrand} onClear={props.onClearBrands} />
+        <BrandPicker />
       </div>
       {/* "Best match" is what everyone expects, so it rests as an icon; any other order is spelled out. */}
       <Select
         label="Sort deals"
         prefix="Sort:"
         icon="sort"
-        compact={sort === DEFAULT_SORT}
+        variant={sort === DEFAULT_SORT ? "icon" : "label"}
         hint={{ label: "Sort deals", detail: `Now: ${sortLabel}` }}
         value={sort}
         options={SORT_OPTIONS}

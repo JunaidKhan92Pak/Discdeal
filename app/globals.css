@@ -3,6 +3,25 @@
 @import "../styles/components.css";
 
 @layer base {
+  /* Sticky headers (the readable pages' header, the app bar on phones) must never cover what has keyboard focus or
+     what a link jumps to: the browser keeps this much room above it when scrolling things into view. */
+  html {
+    scroll-padding-top: 5rem;
+  }
+
+  /* No 300 ms double-tap-zoom wait and no grey tap flash: every control has its own pressed and hover styles. */
+  a,
+  button,
+  input,
+  select,
+  label,
+  summary,
+  [role="button"],
+  [role="checkbox"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-bg font-sans text-body text-ink antialiased;
     text-rendering: optimizeLegibility;
@@ -19,7 +38,7 @@
 }
 
 /*
- * Entrance animations (GSAP / anime.js). The inline script in app/layout.tsx adds `motion-ok` to <html> before first
+ * Entrance animations (GSAP / Web Animations). The inline script in app/layout.tsx adds `motion-ok` to <html> before first
  * paint, unless the person asked for reduced motion, so these elements start hidden and are revealed by script with no
  * flash. If the scripts have not taken over after a few seconds, that script adds `motion-fallback` and everything
  * shows anyway: an animation is decoration, the content is not.
@@ -48,8 +67,73 @@
   }
 }
 
-/* Theme switch cross-fade (see ThemeToggle): a quick fade of the whole page snapshot. */
+/* Theme switch cross-fade (see ThemeToggle), and everything not named below: a quick fade of the page snapshot. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.3s;
+}
+
+/*
+ * Start screen ⇄ results (app/page.tsx). Old content leaves fast so it does not compete; the search bar, the one
+ * thing on both screens, glides to its new place; results arrive a moment later and more gently.
+ */
+:root {
+  --vt-exit: 150ms;
+  --vt-enter: 220ms;
+  --vt-move: 420ms;
+}
+
+/* Clicks and taps during the short animation reach the page instead of being swallowed by the overlay. */
+::view-transition {
+  pointer-events: none;
+}
+
+/* The search bar: moves and resizes as one object. A light blur mid-flight hides the scaling of its snapshot. */
+::view-transition-group(.search-move) {
+  animation-duration: var(--vt-move);
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+::view-transition-image-pair(.search-move) {
+  animation-name: vt-via-blur;
+  animation-duration: var(--vt-move);
+}
+
+/* Headline, example searches, benefits: fade and drift up out of the way. */
+::view-transition-old(.start-out) {
+  animation: var(--vt-exit) ease-in both vt-fade-out, var(--vt-exit) ease-in both vt-up-out;
+}
+
+/* Results: rise in after the start screen has left (the list's own `animate-rise` plays inside this, live). */
+::view-transition-new(.results-in) {
+  animation: var(--vt-enter) ease-out var(--vt-exit) both vt-fade-in;
+}
+/* Going back home: results sink and fade quickly. */
+::view-transition-old(.results-out) {
+  animation: var(--vt-exit) ease-in both vt-fade-out, var(--vt-exit) ease-in both vt-down-out;
+}
+
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-up-out {
+  to { transform: translateY(-12px); }
+}
+@keyframes vt-down-out {
+  to { transform: translateY(16px); }
+}
+@keyframes vt-via-blur {
+  30% { filter: blur(2px); }
+}
+
+/* Less motion asked for: view transitions become an instant switch. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

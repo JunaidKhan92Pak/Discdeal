@@ -7,21 +7,23 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 type SelectProps<T extends string> = {
   /** Accessible name, e.g. "Your city". */
   label: string;
-  icon?: IconName;
   /** Short visible lead-in, e.g. "Sort:". Hidden on phones to save room. */
   prefix?: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
-  /** Rest as just the icon (the value is still read out to screen readers). Needs `icon`. */
-  compact?: boolean;
   /** Shown on hover / keyboard focus, e.g. { label: "Sort", detail: "Best match" }. */
   hint?: { label: string; detail?: string };
-};
+} & (
+  /** "label" (default): the pill spells out the current choice. */
+  | { variant?: "label"; icon?: IconName }
+  /** "icon": the pill rests as just its icon (the value is still read out to screen readers). */
+  | { variant: "icon"; icon: IconName }
+);
 
 /** A pill that opens a Radix Select list: big rows, a tick on the current choice, full keyboard and screen-reader support. */
-export function Select<T extends string>({ label, icon, prefix, value, options, onChange, compact = false, hint }: SelectProps<T>) {
-  const iconOnly = compact && icon;
+export function Select<T extends string>({ label, icon, prefix, value, options, onChange, variant = "label", hint }: SelectProps<T>) {
+  const iconOnly = variant === "icon";
   const trigger = (
     <RadixSelect.Trigger aria-label={label} className="pill" data-iconic={iconOnly ? "" : undefined}>
       {icon && <Icon name={icon} className={iconOnly ? "size-5" : "size-4 text-primary"} />}

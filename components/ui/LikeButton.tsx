@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { boing } from "@/lib/motion";
+import { boing } from "@/lib/animate";
 
 type LikeButtonProps = { liked: boolean; title: string; onToggle: () => void; className?: string };
 

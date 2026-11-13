@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import type Lenis from "lenis";
-import { createLenis } from "@/lib/motion";
+import { createLenis } from "@/lib/smooth-scroll";
 
 /**
  * Lenis smooth scrolling inside one scrolling box (the results grid, the filter sidebar). The box's first child is
  * what moves, so give the box a single wrapper inside. Only with a mouse or trackpad, and only drawing while it
  * scrolls (see createLenis); phones keep their own native scrolling.
- * Returns the Lenis instance (or null) for jumps like "back to top".
+ * Returns the Lenis instance (or null: not wanted, or still downloading) for jumps like "back to top".
  */
 export function useSmoothScroll(ref: RefObject<HTMLElement | null>, enabled = true): RefObject<Lenis | null> {
   const lenisRef = useRef<Lenis | null>(null);
@@ -17,9 +17,15 @@ export function useSmoothScroll(ref: RefObject<HTMLElement | null>, enabled = tr
     const wrapper = ref.current;
     const content = wrapper?.firstElementChild;
     if (!enabled || !wrapper || !(content instanceof HTMLElement)) return;
-    const lenis = createLenis({ wrapper, content });
-    lenisRef.current = lenis;
+    let lenis: Lenis | null = null;
+    let gone = false;
+    void createLenis({ wrapper, content }).then((created) => {
+      // Left (or turned off) while Lenis was downloading: do not start it.
+      if (gone) created?.destroy();
+      else lenisRef.current = lenis = created;
+    });
     return () => {
+      gone = true;
       lenis?.destroy();
       lenisRef.current = null;
     };

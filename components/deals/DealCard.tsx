@@ -1,5 +1,6 @@
 "use client";
 
+import { useDealsContext } from "@/components/deals/DealsContext";
 import { OfferPanel, dealKind } from "@/components/deals/OfferPanel";
 import { Icon } from "@/components/ui/Icon";
 import { LikeButton } from "@/components/ui/LikeButton";
@@ -7,23 +8,12 @@ import { ShareButton } from "@/components/ui/ShareButton";
 import { topicPath } from "@/lib/deal-pages";
 import { formatCards, formatCities, formatGiver, formatOffer, formatOtherOffer, formatPrice, formatShareText, formatUntil } from "@/lib/format";
 import { dataSaver } from "@/lib/network";
-import type { Bank, Card, CityId, Deal } from "@/lib/types";
+import type { Deal } from "@/lib/types";
 
 /** Like and share on a card. Phones: 10% smaller (40px, still an easy tap) so they crowd the text column less. */
 const CARD_ACTION = "card-action max-sm:size-10 max-sm:[&_svg]:size-[1.3rem]";
 
-type DealCardProps = {
-  deal: Deal;
-  liked: boolean;
-  searchedCities: CityId[];
-  myCardIds: string[];
-  /** Card names from the data, to show which card a deal needs. */
-  cards: Card[];
-  /** Bank names from the data, to say who gives a card offer ("By HBL"). */
-  banks: Bank[];
-  onToggleLike: (id: number) => void;
-  onOpen: (deal: Deal) => void;
-};
+type DealCardProps = { deal: Deal };
 
 /**
  * One deal. Under the big discount, every card answers the same questions in the same order, so a bank's offer is
@@ -40,7 +30,13 @@ type DealCardProps = {
  * Without a photo the offer itself is the picture; with one, the photo fills the same frame. The whole card opens the
  * details; the heart is its own button.
  */
-export function DealCard({ deal, liked, searchedCities, myCardIds, cards, banks, onToggleLike, onOpen }: DealCardProps) {
+export function DealCard({ deal }: DealCardProps) {
+  const {
+    state: { liked: likedIds, searchedCities, myCards, cards, banks },
+    actions: { toggleLike: onToggleLike, openDeal: onOpen },
+  } = useDealsContext();
+  const liked = likedIds.includes(deal.id);
+  const myCardIds = myCards.cards;
   const storeSale = deal.cards.length === 0;
   const items = deal.items ?? [];
   const giver = formatGiver(deal, cards, banks);
@@ -58,15 +54,16 @@ export function DealCard({ deal, liked, searchedCities, myCardIds, cards, banks,
   // A store sale is the shop's own price cut, so the things that are cheaper lead (the shop is already the heading).
   const headline = storeSale ? (items.length > 0 ? items.join(" · ") : deal.title) : deal.brand;
   const detail = storeSale ? (items.length > 0 ? deal.title : dealKind(deal)) : null;
+  // Starts with the words on screen, so voice control ("click Domino's") finds the button by what people see.
   const label = storeSale
-    ? `${formatOffer(deal)} by ${deal.brand} on ${items.length > 0 ? items.join(", ") : deal.title}, for everyone. Show details`
-    : `${formatOffer(deal)} by ${giver} at ${deal.brand}, ${items.length > 0 ? `${items.join(", ")}, ` : ""}${deal.title}. Pay with ${cardText}. Show details`;
+    ? `${items.length > 0 ? items.join(", ") : deal.title}: ${formatOffer(deal)} by ${deal.brand}, for everyone. Show details`
+    : `${deal.brand}: ${formatOffer(deal)} by ${giver}, ${items.length > 0 ? `${items.join(", ")}, ` : ""}${deal.title}. Pay with ${cardText}. Show details`;
 
   return (
     <article className="deal-card">
       {/* Room is kept in the tag's top row; the heart sits on the card itself so it stays above the card-wide tap area.
           With Data Saver on, pictures are left out of the list (they still show in the details). */}
-      <OfferPanel deal={deal} showImage={!saver} action={<span className="size-9 shrink-0 max-sm:hidden" aria-hidden="true" />} />
+      <OfferPanel deal={deal} image={saver ? undefined : deal.image} action={<span className="size-9 shrink-0 max-sm:hidden" aria-hidden="true" />} />
       {/* Like, and share right under it. Phones: they sit in the text column's top-right corner, so the first lines
           of text keep clear of them (pr-11). */}
       <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">

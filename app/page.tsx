@@ -1,17 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { flushSync } from "react-dom";
+import { addTransitionType, startTransition, useEffect, useState, ViewTransition, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { AuthDialog } from "@/components/auth/AuthDialog";
+import { LazyAuthDialog } from "@/components/auth/LazyAuthDialog";
 import { Header } from "@/components/layout/Header";
 import { Benefits } from "@/components/home/Benefits";
 import { Hero } from "@/components/home/Hero";
 import { QuickSearches } from "@/components/home/QuickSearches";
 import { SearchBar } from "@/components/home/SearchBar";
-import { DealsBrowser } from "@/components/deals/DealsBrowser";
 import { useMeta } from "@/hooks/useMeta";
 import { useSavedCity } from "@/hooks/useSavedCity";
+
+/*
+ * The results (cards, filters, details dialog) are not part of the start screen, so they are not in its first
+ * download. They are fetched as soon as the browser is idle, or the moment the search box is focused, so they are
+ * ready long before the first results arrive.
+ */
+const loadDealsBrowser = () => import("@/components/deals/DealsBrowser").then((mod) => mod.DealsBrowser);
+const DealsBrowser = dynamic(loadDealsBrowser, { ssr: false });
+const preloadDealsBrowser = () => void loadDealsBrowser();
+
+/** The search bar's glide between the two screens (styles in globals.css). Nothing else moves it with a transition. */
+const MOVE_SEARCH = { "to-results": "search-move", "to-home": "search-move", default: "none" };
+
+/**
+ * Start-screen extras (headline, example searches, benefits): fade out quickly when results open, so the search bar
+ * and the results are what the eye follows. Coming back they are not animated here: they have their own entrances.
+ */
+function LeavesForResults({ children }: { children: ReactNode }) {
+  return (
+    <ViewTransition exit={{ "to-results": "start-out", default: "none" }} default="none">
+      {children}
+    </ViewTransition>
+  );
+}
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -22,6 +45,15 @@ export default function Home() {
   const [browsing, setBrowsing] = useState(false);
   // Counts Enter presses: each one searches at once instead of waiting for typing to pause.
   const [searchNow, setSearchNow] = useState(0);
+
+  useEffect(() => {
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(preloadDealsBrowser, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(preloadDealsBrowser, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // A shared link like /?q=pizza+lahore opens straight on that search (also how AI assistants and Google's
   // search box link in). Read once after the page loads, so the prerendered page stays the same for everyone.
@@ -41,30 +73,17 @@ export default function Home() {
   }, [query, browsing]);
 
   /**
-   * Switches between the search screen and the results; a short cross-fade covers the layout change.
-   * The cross-fade waits for the browser to paint, which a throttled or background tab may never do, so after
-   * 300 ms the switch happens anyway: the fade is decoration, showing results is not.
+   * Switches between the search screen and the results as a React view transition: the search bar glides from the
+   * middle of the screen up into the header row (and back), the start screen's extras fade out, the results rise in.
+   * The type says which way it goes, so each <ViewTransition> below animates only for its own direction.
+   * Browsers without view transitions (and people who asked for less motion, see globals.css) just switch.
    */
   function changeBrowsing(next: boolean) {
     if (next === browsing) return;
-    if (!document.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    startTransition(() => {
+      addTransitionType(next ? "to-results" : "to-home");
       setBrowsing(next);
-      return;
-    }
-    let applied = false;
-    const apply = () => {
-      if (applied) return;
-      applied = true;
-      flushSync(() => setBrowsing(next));
-    };
-    const transition = document.startViewTransition(apply);
-    // Skipping rejects `ready`; that is expected here, not an error.
-    transition.ready.catch(() => {});
-    setTimeout(() => {
-      if (applied) return;
-      transition.skipTransition();
-      apply();
-    }, 300);
+    });
   }
 
   // Switching tabs/windows blurs the input too; only treat it as "left the search" when the page itself still has focus.
@@ -91,37 +110,67 @@ export default function Home() {
   const active = focused || browsing || query.trim().length > 0;
 
   return (
-    <main className="page">
+    <div className="page">
+      <a href="#main" className="skip-link">
+        Skip to {browsing ? "deals" : "search"}
+      </a>
       <Header city={city} onCityChange={setCity} onHome={goHome} browsing={browsing}>
         {/* Search stage: fills the screen and centres its content while idle; just the search bar once browsing */}
         <div className="flex h-full flex-col">
           <div className={`min-h-2 transition-[flex-grow] motion-layout ${browsing ? "hidden" : active ? "grow-[.001]" : "grow"}`} />
 
-          {!browsing && <Hero collapsed={active} />}
+          {!browsing && (
+            <LeavesForResults>
+              <Hero collapsed={active} />
+            </LeavesForResults>
+          )}
 
           <div className={browsing ? "pt-3 lg:pt-0" : `transition-[padding] motion-layout ${active ? "pt-4" : "pt-0"}`}>
-            <SearchBar
-              value={query}
-              compact={browsing}
-              examples={meta?.suggestions}
-              onChange={handleChange}
-              onFocus={() => setFocused(true)}
-              onBlur={handleBlur}
-              onSubmit={() => {
-                setSearchNow((n) => n + 1);
-                changeBrowsing(true);
-              }}
-            />
-            {!browsing && <QuickSearches examples={meta?.suggestions ?? []} onPick={pickExample} />}
+            {/* The same search bar on both screens (never re-mounted): only its place and size change, so it glides. */}
+            <ViewTransition name="search-bar" update={MOVE_SEARCH} default="none">
+              <SearchBar
+                value={query}
+                variant={browsing ? "bar" : "hero"}
+                examples={meta?.suggestions}
+                onChange={handleChange}
+                onFocus={() => {
+                  preloadDealsBrowser();
+                  setFocused(true);
+                }}
+                onBlur={handleBlur}
+                onSubmit={() => {
+                  setSearchNow((n) => n + 1);
+                  changeBrowsing(true);
+                }}
+              />
+            </ViewTransition>
+            {!browsing && (
+              <LeavesForResults>
+                <QuickSearches examples={meta?.suggestions ?? []} onPick={pickExample} />
+              </LeavesForResults>
+            )}
           </div>
 
-          {!browsing && <Benefits collapsed={active} />}
+          {!browsing && (
+            <LeavesForResults>
+              <Benefits collapsed={active} />
+            </LeavesForResults>
+          )}
 
           {!browsing && <div className="min-h-2 grow" />}
         </div>
       </Header>
 
-      {browsing && <DealsBrowser query={query} city={city} searchNow={searchNow} onQueryChange={setQuery} />}
+      {browsing && (
+        // Rises in under the search bar; sinks away when going back to the start screen.
+        <ViewTransition enter={{ "to-results": "results-in", default: "none" }} exit={{ "to-home": "results-out", default: "none" }} default="none">
+          <main id="main" tabIndex={-1} className="flex min-h-0 flex-1 flex-col outline-none">
+            {/* The start screen's headline is gone once results show; this keeps one page heading for screen readers. */}
+            <h1 className="sr-only">{query.trim() ? `Deals for “${query.trim()}”` : "All deals"}</h1>
+            <DealsBrowser query={query} city={city} searchNow={searchNow} onQueryChange={setQuery} />
+          </main>
+        </ViewTransition>
+      )}
 
       {/* On phones the footer gives its height to the results while browsing. */}
       <footer className={`shrink-0 justify-center pt-3 text-caption text-muted [@media(max-height:34rem)]:hidden ${browsing ? "hidden sm:flex" : "flex"}`}>
@@ -137,7 +186,7 @@ export default function Home() {
       </footer>
 
       {/* One log-in window for the whole page; anything that needs an account opens it (see useAccount). */}
-      <AuthDialog city={city} />
-    </main>
+      <LazyAuthDialog city={city} />
+    </div>
   );
 }

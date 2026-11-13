@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { Dialog, Tabs } from "radix-ui";
 import { Icon } from "@/components/ui/Icon";
 import { account, useAccount, type SubmitResult } from "@/hooks/useAccount";
@@ -15,7 +16,8 @@ import type { CityId } from "@/lib/types";
  */
 export function AuthDialog({ city }: { city: CityId | null }) {
   const { prompt } = useAccount();
-  const [tab, setTab] = useState<"login" | "register">("login");
+  // It may first mount already open (it is loaded on demand), so start on the tab that was asked for.
+  const [tab, setTab] = useState<"login" | "register">(prompt?.mode ?? "login");
   const [shownPrompt, setShownPrompt] = useState(prompt);
   // Each time it opens, start on the tab that was asked for.
   if (prompt !== shownPrompt) {
@@ -28,7 +30,9 @@ export function AuthDialog({ city }: { city: CityId | null }) {
       <Dialog.Portal>
         <Dialog.Overlay className="overlay" />
         {/* dvh: with the keyboard open the sheet shrinks to the space above it (see `interactiveWidget` in app/layout.tsx). */}
-        <Dialog.Content className="sheet flex max-h-[92dvh] flex-col">
+        {/* overflow-hidden: the pinned footer's glass background follows the sheet's rounded corners instead of
+            painting square ones over them. (The close button sits inside, so nothing needs to stick out.) */}
+        <Dialog.Content className="sheet flex max-h-[92dvh] flex-col overflow-hidden">
           <div className="sheet-handle" aria-hidden="true" />
           <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-3 sm:pt-5">
             <div>
@@ -48,13 +52,15 @@ export function AuthDialog({ city }: { city: CityId | null }) {
                 <Tabs.Trigger
                   key={value}
                   value={value}
-                  className="h-10 rounded-full text-body font-semibold text-soft transition-colors focus-visible:outline-2 focus-visible:outline-primary data-[state=active]:bg-raised data-[state=active]:text-ink"
+                  className="h-10 rounded-full text-body font-semibold text-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-primary data-[state=active]:bg-raised data-[state=active]:text-ink"
                 >
                   {value === "login" ? "Log in" : "Create account"}
                 </Tabs.Trigger>
               ))}
             </Tabs.List>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4">
+            {/* No visible scrollbar here: the form is short (it only scrolls on small screens, by wheel, touch or Tab), and
+                a scrollbar's space would push the fields out of line with the title and tabs above. */}
+            <div className="sheet-scroll px-5 pt-4 [scrollbar-width:none]">
               <Tabs.Content value="login">
                 <LoginForm onSwitch={() => setTab("register")} />
               </Tabs.Content>
@@ -77,22 +83,25 @@ function useSubmit() {
   async function submit(event: FormEvent<HTMLFormElement>, check: (form: Record<string, string>) => FieldErrors | null, send: (form: Record<string, string>) => Promise<SubmitResult>) {
     event.preventDefault();
     if (busy) return;
-    const form = Object.fromEntries([...new FormData(event.currentTarget)].map(([key, value]) => [key, String(value)]));
+    // Kept now: React clears event.currentTarget once this handler awaits.
+    const formEl = event.currentTarget;
+    const form = Object.fromEntries([...new FormData(formEl)].map(([key, value]) => [key, String(value)]));
     const problems = check(form);
     if (problems) {
-      setErrors(problems);
-      focusFirstProblem(event.currentTarget, problems);
+      showProblems(formEl, problems);
       return;
     }
     setBusy(true);
     setErrors({});
     const result = await send(form);
     setBusy(false);
-    if (!result.ok) {
-      const next = { ...result.errors, ...(result.error ? { form: result.error } : {}) };
-      setErrors(next);
-      focusFirstProblem(event.currentTarget, next);
-    }
+    if (!result.ok) showProblems(formEl, { ...result.errors, ...(result.error ? { form: result.error } : {}) });
+  }
+
+  /** Shows the problems first, then moves the cursor, so a screen reader reads the field together with its problem. */
+  function showProblems(formEl: HTMLFormElement, problems: FieldErrors) {
+    flushSync(() => setErrors(problems));
+    focusFirstProblem(formEl, problems);
   }
 
   return { errors, busy, submit };
@@ -155,7 +164,8 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       </Field>
       <PasswordField label="Password" name="password" autoComplete="current-password" enterKeyHint="go" error={errors.password} />
       <FormFooter error={errors.form}>
-        <button type="submit" className="btn-primary w-full" disabled={busy}>
+        {/* aria-disabled, not disabled: a disabled button drops keyboard focus; double sends are blocked in submit(). */}
+        <button type="submit" className="btn-primary w-full" aria-disabled={busy}>
           {busy ? "Logging in…" : "Log in"}
         </button>
         <p className="text-center text-small text-soft">
@@ -220,7 +230,7 @@ function RegisterForm({ city, onSwitch }: { city: CityId | null; onSwitch: () =>
       <PasswordField label="Password" name="password" autoComplete="new-password" enterKeyHint="next" hint={`At least ${PASSWORD_MIN} characters.`} error={errors.password} />
       <PasswordField label="Confirm password" name="confirmPassword" autoComplete="new-password" enterKeyHint="go" error={errors.confirmPassword} />
       <FormFooter error={errors.form}>
-        <button type="submit" className="btn-primary w-full" disabled={busy}>
+        <button type="submit" className="btn-primary w-full" aria-disabled={busy}>
           {busy ? "Creating your account…" : "Create account"}
         </button>
         <p className="text-center text-small text-soft">
